@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import {
   FileSpreadsheet,
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Maximize2,
+  Minimize2,
   ZoomIn,
   ZoomOut,
   RotateCw,
@@ -35,11 +36,29 @@ export default function DocumentViewerModal({
   isMobile,
   styles
 }) {
+  const [isModalMaximized, setIsModalMaximized] = useState(false);
   const [isImageMaximized, setIsImageMaximized] = useState(false);
   const [isItemsExpanded, setIsItemsExpanded] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isSavingUpright, setIsSavingUpright] = useState(false);
+
+  // Keyboard shortcut listener: ESC closes maximized views
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isImageMaximized) {
+          setIsImageMaximized(false);
+        } else if (isModalMaximized) {
+          setIsModalMaximized(false);
+        }
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isImageMaximized, isModalMaximized]);
 
   const receiptImageUri = (viewItem?.filePath?.startsWith('data:image') || viewItem?.filePath?.startsWith('http') || viewItem?.filePath?.startsWith('blob:'))
     ? viewItem.filePath
@@ -64,7 +83,18 @@ export default function DocumentViewerModal({
   return (
     <Modal visible={!!viewItem} transparent animationType="fade">
         <View style={[styles.modalOverlay, isMobile && styles.modalOverlayMobile]}>
-          <View style={[styles.viewerModalContainer, isMobile && styles.modalContainerMobile, isLight && styles.viewerModalContainerLight]}>
+          <View style={[
+            styles.viewerModalContainer,
+            isMobile && styles.modalContainerMobile,
+            isLight && styles.viewerModalContainerLight,
+            isModalMaximized && {
+              width: '98vw',
+              maxWidth: '98vw',
+              height: '96vh',
+              maxHeight: '96vh',
+              borderRadius: 8,
+            }
+          ]}>
             <View style={[styles.viewerHeader, isMobile && styles.modalHeaderMobile, isLight && styles.modalHeaderLight]}>
               <View style={[styles.viewerHeaderLeft, isMobile && { gap: 10, flex: 1, minWidth: 0 }]}>
                 <View style={[styles.viewerBadge, isMobile && { width: 38, height: 38 }]}>
@@ -121,6 +151,26 @@ export default function DocumentViewerModal({
                 >
                   <Download size={16} color={isLight ? '#475569' : '#cbd5e1'} />
                   {!isMobile && <Text style={[styles.btnOutlineText, isLight && { color: '#475569' }]}>Export</Text>}
+                </TouchableOpacity>
+
+                {/* Window Maximize / Restore Toggle */}
+                <TouchableOpacity
+                  style={[styles.btnOutline, isMobile && { paddingHorizontal: 8, paddingVertical: 6 }]}
+                  onPress={() => setIsModalMaximized(prev => !prev)}
+                  title={isModalMaximized ? "Restore default window size" : "Maximize window to full screen"}
+                  accessibilityRole="button"
+                  accessibilityLabel={isModalMaximized ? "Restore window" : "Maximize window"}
+                >
+                  {isModalMaximized ? (
+                    <Minimize2 size={16} color={isLight ? '#f47721' : '#f47721'} />
+                  ) : (
+                    <Maximize2 size={16} color={isLight ? '#475569' : '#cbd5e1'} />
+                  )}
+                  {!isMobile && (
+                    <Text style={[styles.btnOutlineText, isLight && { color: isModalMaximized ? '#f47721' : '#475569' }]}>
+                      {isModalMaximized ? 'Restore' : 'Maximize'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -266,30 +316,49 @@ export default function DocumentViewerModal({
                       setIsImageMaximized(true);
                     }}
                     style={[styles.scannedImageViewerBox, { position: 'relative', cursor: 'zoom-in' }]}
-                    title="Click image to open in full screen"
+                    title="Click image to open in full screen inspection mode"
                   >
                     <Image
                       source={{ uri: receiptImageUri }}
-                      style={{ width: '100%', height: 380, borderRadius: 8, backgroundColor: isLight ? '#f8fafc' : '#0c1322' }}
+                      style={{
+                        width: '100%',
+                        height: isModalMaximized ? 540 : 380,
+                        borderRadius: 8,
+                        backgroundColor: isLight ? '#f8fafc' : '#0c1322'
+                      }}
                       resizeMode="contain"
                     />
-                    <View style={{
-                      position: 'absolute',
-                      bottom: 12,
-                      right: 12,
-                      backgroundColor: 'rgba(15, 23, 42, 0.82)',
-                      paddingHorizontal: 10,
-                      paddingVertical: 6,
-                      borderRadius: 6,
-                      borderWidth: 1,
-                      borderColor: 'rgba(255, 255, 255, 0.15)',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6
-                    }}>
-                      <Maximize2 size={12} color="#f47721" />
-                      <Text style={{ color: '#f8fafc', fontSize: 11, fontWeight: '600' }}>Click to Maximize</Text>
-                    </View>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        setZoomLevel(1);
+                        setRotation(0);
+                        setIsImageMaximized(true);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        bottom: 12,
+                        right: 12,
+                        backgroundColor: 'rgba(15, 23, 42, 0.88)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor: 'rgba(244, 119, 33, 0.4)',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                        cursor: 'pointer',
+                        zIndex: 10
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Maximize receipt image"
+                      title="Click to maximize receipt image"
+                    >
+                      <Maximize2 size={13} color="#f47721" />
+                      <Text style={{ color: '#f8fafc', fontSize: 11, fontWeight: '700' }}>Click to Maximize</Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 </View>
               )}
@@ -484,27 +553,21 @@ export default function DocumentViewerModal({
           </View>
         </View>
 
-        {/* FULL-SCREEN HIGH-RESOLUTION RECEIPT LIGHTBOX */}
+        {/* FULL-SCREEN HIGH-RESOLUTION RECEIPT LIGHTBOX (Direct overlay without nested Modal portal issues) */}
         {isImageMaximized && receiptImageUri && (
-          <Modal
-            visible={isImageMaximized}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setIsImageMaximized(false)}
-          >
-            <View style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100vw',
-              height: '100vh',
-              backgroundColor: 'rgba(2, 6, 23, 0.97)',
-              zIndex: 999999,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
+          <View style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(2, 6, 23, 0.98)',
+            zIndex: 9999999,
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
               {/* Top Controls Bar */}
               <View style={{
                 flexDirection: 'row',
@@ -732,7 +795,6 @@ export default function DocumentViewerModal({
                 </Text>
               </View>
             </View>
-          </Modal>
         )}
       </Modal>
   );
