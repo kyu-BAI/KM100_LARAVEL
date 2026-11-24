@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" class="light-theme">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f3ef" />
+    <meta name="description" content="KM100 Skills & Training Center Inc. - Enterprise emission testing inventory, official receipts, and document management system." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://km100-six.vercel.app/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://km100-six.vercel.app/" />
+    <meta property="og:title" content="KM100 - PETC Inventory & Document Management System" />
+    <meta property="og:description" content="KM100 Skills & Training Center Inc. - PETC Document Management & Viewing System" />
+    <meta property="og:image" content="https://km100-six.vercel.app/km100-logo.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://km100-six.vercel.app/" />
+    <meta name="twitter:title" content="KM100 - PETC Inventory & Document Management System" />
+    <meta name="twitter:description" content="Enterprise emission testing official receipts and document management system." />
+    <meta name="twitter:image" content="https://km100-six.vercel.app/km100-logo.png" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="application-version" content="1.3.1" />
+    <title>KM100 - PETC Inventory & Document Management System</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html, body, #root {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        background-color: #f5f3ef;
+        font-family: 'Inter', 'Poppins', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #252525;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+      }
+      /* Smooth global micro-interactions */
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      button, a, input, [role="button"] {
+        touch-action: manipulation;
+      }
+      [role="button"], button {
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+                    filter 0.15s ease, 
+                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      [role="button"]:hover, button:hover {
+        filter: brightness(1.06);
+      }
+      [role="button"]:active, button:active {
+        transform: scale(0.97) !important;
+      }
+
+      /* High Performance GPU-Accelerated Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideInLeft {
+        from {
+          transform: translate3d(-100%, 0, 0);
+          opacity: 0.85;
+        }
+        to {
+          transform: translate3d(0, 0, 0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes modalSlideUp {
+        0% {
+          opacity: 0;
+          transform: translate3d(0, 24px, 0) scale(0.96);
+        }
+        100% {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+      }
+
+      @keyframes toastSlideIn {
+        0% {
+          opacity: 0;
+          transform: translate3d(0, -24px, 0) scale(0.92);
+        }
+        60% {
+          opacity: 1;
+          transform: translate3d(0, 3px, 0) scale(1.02);
+        }
+        100% {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+      }
+
+      @keyframes accordionDown {
+        from {
+          opacity: 0;
+          transform: translate3d(0, -8px, 0);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0);
+        }
+      }
+
+      @keyframes pulseGlow {
+        0% {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+        50% {
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          transform: scale(1.02);
+        }
+        100% {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+      }
+
+      /* Custom scrollbars for clean UI */
+      ::-webkit-scrollbar {
+        width: 7px;
+        height: 7px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f5f3ef;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d8d4cb;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #b5b0a4;
+      }
+      /* Light mode global overrides */
+      html.light-theme, body.light-theme, #root.light-theme {
+        background-color: #f5f3ef;
+        color: #252525;
+      }
+      .light-theme ::-webkit-scrollbar-track {
+        background: #f5f3ef;
+      }
+      .light-theme ::-webkit-scrollbar-thumb {
+        background: #d8d4cb;
+      }
+      .light-theme ::-webkit-scrollbar-thumb:hover {
+        background: #b5b0a4;
+      }
+    </style>
+  </head>
+  <body class="light-theme">
+    <div id="root"></div>
+    <script>
+      window.addEventListener('error', function(event) {
+        console.error('Global startup error:', event);
+        var root = document.getElementById('root');
+        if (root && (!root.children || root.children.length === 0)) {
+          root.innerHTML = '<div style="min-height:100vh;background-color:#0b1120;color:#f8fafc;display:flex;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;">' +
+            '<div style="max-width:480px;width:100%;background-color:#0f172a;padding:24px;border-radius:14px;border:1px solid #ef4444;text-align:center;">' +
+            '<h2 style="color:#ef4444;margin:0 0 10px 0;">Startup Diagnostic</h2>' +
+            '<p style="color:#94a3b8;font-size:13px;margin:0 0 14px 0;">' + (event.message || 'An error prevented the app from mounting.') + '</p>' +
+            '<pre style="text-align:left;background:#020617;padding:10px;border-radius:8px;font-size:10px;color:#fca5a5;overflow:auto;max-height:160px;margin-bottom:16px;">' + (event.error ? event.error.stack : (event.filename + ':' + event.lineno)) + '</pre>' +
+            '<button onclick="localStorage.clear();sessionStorage.clear();window.location.reload();" style="background-color:#0284c7;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Clear Cache & Reload</button>' +
+            '</div></div>';
+        }
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
