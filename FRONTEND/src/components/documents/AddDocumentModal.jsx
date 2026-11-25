@@ -95,6 +95,7 @@ export default function AddDocumentModal({
   handleProcessReceiptPhoto,
   consumableEntity,
   setConsumableEntity,
+  allItems,
   consumableName,
   setConsumableName,
   consumableQty,
@@ -452,7 +453,17 @@ export default function AddDocumentModal({
                       <TouchableOpacity
                         key={store}
                         disabled={isDisabled}
-                        onPress={() => setConsumableEntity(store)}
+                        onPress={() => {
+                          setConsumableEntity(store);
+                          // Recalculate item number for this entity
+                          if (setConsumableItemNo && allItems) {
+                            const entityCount = (allItems || []).filter(i =>
+                              (i.category === 'Consumables' || i.categoryId === 'consumables') &&
+                              (i.entity || '').toLowerCase() === store.toLowerCase()
+                            ).length;
+                            setConsumableItemNo(String(entityCount + 1));
+                          }
+                        }}
                         style={{
                           flex: 1,
                           flexDirection: 'row',
@@ -632,7 +643,7 @@ export default function AddDocumentModal({
 
                 {/* Quick Unit Measure Presets */}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14, marginTop: -6 }}>
-                  {['pcs', 'bottle', 'gallon', 'box', 'pack', 'roll', 'can', 'kg', 'set'].map(u => (
+                  {['pcs', 'bottle', 'gallon', 'box', 'pack', 'roll', 'can', 'kg', 'reams', 'set'].map(u => (
                     <TouchableOpacity
                       key={u}
                       onPress={() => setConsumableUnit(u)}

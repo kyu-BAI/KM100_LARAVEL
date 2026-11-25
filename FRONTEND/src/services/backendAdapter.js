@@ -66,8 +66,9 @@ export const backend = {
    */
   async saveReceipt(tableName, record) {
     try {
+      const targetTable = tableName || record?.table || 'inventory_items';
       const payload = {
-        table: tableName,
+        table: targetTable,
         ...record,
         year: record.year !== undefined && record.year !== null ? String(record.year) : '',
         amount: record.amount !== undefined && record.amount !== null ? Number(record.amount) : 0,
@@ -81,9 +82,27 @@ export const backend = {
   },
 
   /**
-   * Update an existing receipt
+   * Create receipt alias for saveReceipt
    */
-  async updateReceipt(tableName, id, updates) {
+  async createReceipt(record, tableName = 'inventory_items') {
+    const table = tableName || record?.table || 'inventory_items';
+    return this.saveReceipt(table, record);
+  },
+
+  /**
+   * Update an existing receipt (supports both (tableName, id, updates) and (id, tableName, updates))
+   */
+  async updateReceipt(arg1, arg2, arg3) {
+    let tableName, id, updates;
+    if (typeof arg1 === 'string' && (arg1.includes('_receipts') || arg1 === 'inventory_items')) {
+      tableName = arg1;
+      id = arg2;
+      updates = arg3 || {};
+    } else {
+      id = arg1;
+      tableName = typeof arg2 === 'string' && arg2 ? arg2 : (updates?.table || 'inventory_items');
+      updates = arg3 || {};
+    }
     try {
       const payload = {
         table: tableName,

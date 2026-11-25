@@ -1168,9 +1168,12 @@ export default function App() {
       } else if (navSub.includes('petc') || navSub.includes('office') || isPetcEmployee) {
         targetEntity = 'PETC';
       }
-      const existingCount = items.filter(i => (i.category === 'Consumables' || i.categoryId === 'consumables')).length;
+      const entityConsumables = items.filter(i =>
+        (i.category === 'Consumables' || i.categoryId === 'consumables') &&
+        (i.entity || '').toLowerCase() === targetEntity.toLowerCase()
+      );
       setConsumableEntity(targetEntity);
-      setConsumableItemNo(String(existingCount + 1));
+      setConsumableItemNo(String(entityConsumables.length + 1));
       setConsumableDate(new Date().toISOString().split('T')[0]);
       setConsumableName('');
       setConsumableSupplier('');
@@ -1282,7 +1285,10 @@ export default function App() {
           ? 'red-goose-store-consumables'
           : 'knoah-mari-store-consumables';
 
-      const existingConsumables = items.filter(i => (i.category === 'Consumables' || i.categoryId === 'consumables'));
+      const existingConsumables = items.filter(i =>
+        (i.category === 'Consumables' || i.categoryId === 'consumables') &&
+        (i.entity || '').toLowerCase() === recordEntity.toLowerCase()
+      );
       const itemNoVal = consumableItemNo || String(existingConsumables.length + (isEditing ? 0 : 1));
 
       const previewData = {
@@ -2444,6 +2450,7 @@ export default function App() {
         handleProcessReceiptPhoto={handleProcessReceiptPhoto}
         consumableEntity={consumableEntity}
         setConsumableEntity={setConsumableEntity}
+        allItems={items}
         consumableName={consumableName}
         setConsumableName={setConsumableName}
         consumableQty={consumableQty}
