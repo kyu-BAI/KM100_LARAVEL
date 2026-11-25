@@ -1135,8 +1135,9 @@ export default function App() {
     setOcrOrNumber('');
     stopCamera();
 
-    // If editing an existing consumable item
-    if (itemToEdit) {
+    // If editing an existing consumable item (guard against React SyntheticEvent / DOM Event)
+    const isRealItem = itemToEdit && typeof itemToEdit === 'object' && !itemToEdit.nativeEvent && !itemToEdit.preventDefault && (itemToEdit.id !== undefined || itemToEdit.fileName !== undefined || itemToEdit.title !== undefined);
+    if (isRealItem) {
       const preview = itemToEdit.previewData || {};
       setEditingConsumableId(itemToEdit.id);
       setConsumableEntity(itemToEdit.entity || 'PETC');
@@ -2504,7 +2505,7 @@ export default function App() {
         <View style={styles.mobileFloatingBar}>
           <TouchableOpacity
             style={styles.mobileFloatingBtn}
-            onPress={openAddModal}
+            onPress={() => openAddModal()}
             activeOpacity={0.85}
             title={
               isPetcOfficeSupplies

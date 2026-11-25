@@ -168,7 +168,7 @@ export default function SidebarDirectory({
               {/* Actions in Sidebar */}
               <TouchableOpacity
                 style={styles.treeItem}
-                onPress={openAddModal}
+                onPress={() => openAddModal()}
               >
                 <PlusCircle size={17} color="#34d399" />
                 <Text style={styles.treeText}>Add Document</Text>
@@ -673,6 +673,7 @@ export default function SidebarDirectory({
                                 setActiveNav({
                                   type: 'consumables',
                                   year: null,
+
                                   month: null,
                                   subCategory: 'red-goose-store-consumables',
                                   label: 'Consumables > Red Goose > Store Consumables'
