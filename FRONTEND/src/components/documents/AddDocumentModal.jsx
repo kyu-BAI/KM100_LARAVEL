@@ -119,10 +119,17 @@ export default function AddDocumentModal({
   const hasAllBranchesScope = userDept.includes('all');
   const isKnoahUser = isKnoahEmployee || userDept.includes('knoah');
   const isRedGooseUser = isRedGooseEmployee || userDept.includes('red');
+  const isPetcUser = isPetcEmployee || (userDept.includes('petc') || userDept.includes('office'));
+
+  const navSub = (activeNav?.subCategory || '').toLowerCase();
+  const isPetcOfficeSupplies = activeNav?.type === 'consumables' && (
+    navSub.includes('petc') || navSub.includes('office') || (!activeNav?.subCategory && isPetcUser)
+  );
   const isStoreConsumables = activeNav?.type === 'consumables' && (
-    (activeNav?.subCategory && (activeNav.subCategory.toLowerCase().includes('knoah') || activeNav.subCategory.toLowerCase().includes('red'))) ||
+    (activeNav?.subCategory && (navSub.includes('knoah') || navSub.includes('red'))) ||
     (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
   );
+  const isAnyConsumables = activeNav?.type === 'consumables';
   const [previewZoomed, setPreviewZoomed] = useState(false);
   const [isRotatingPhoto, setIsRotatingPhoto] = useState(false);
   const [isLineItemsExpanded, setIsLineItemsExpanded] = useState(true);
@@ -224,13 +231,13 @@ export default function AddDocumentModal({
                   {addMode === 'options' && 'Add Document'}
                   {addMode === 'insert' && 'Insert Document from Device'}
                   {addMode === 'scan' && 'Scan Receipt Document'}
-                  {addMode === 'store-consumable' && 'Add Store Consumable'}
+                  {addMode === 'store-consumable' && (consumableEntity === 'PETC' ? 'Add Office Supplies' : 'Add Store Consumable')}
                 </Text>
                 <Text style={[styles.modalHeaderSub, isMobile && { fontSize: 11 }, isLight && styles.viewerSubtitleLight]} numberOfLines={1}>
-                  {addMode === 'options' && (isStoreConsumables ? 'Choose an option to add consumable supplies' : 'Choose one of the two options below to add records')}
+                  {addMode === 'options' && (isAnyConsumables ? 'Choose an option to add supplies or documents' : 'Choose one of the two options below to add records')}
                   {addMode === 'insert' && `Target Category: ${activeNav?.label || 'General'}`}
                   {addMode === 'scan' && 'Choose receipt type and capture with camera'}
-                  {addMode === 'store-consumable' && `Record store consumable inventory for ${consumableEntity || 'Store'}`}
+                  {addMode === 'store-consumable' && (consumableEntity === 'PETC' ? 'Record office supplies inventory for PETC' : `Record store consumable inventory for ${consumableEntity || 'Store'}`)}
                 </Text>
               </View>
             </View>
@@ -271,8 +278,8 @@ export default function AddDocumentModal({
                 </View>
               </TouchableOpacity>
 
-              {/* Option 2: Add Store Consumable (for Knoah / Red Goose) OR Scan Document (for others) */}
-              {isStoreConsumables ? (
+              {/* Option 2: Add Supplies / Consumables OR Scan Document */}
+              {isAnyConsumables ? (
                 <TouchableOpacity
                   style={[styles.optionCard, styles.optionCardScan, isMobile && styles.optionCardMobile, isLight && styles.optionCardLight]}
                   onPress={() => setAddMode('store-consumable')}
@@ -282,15 +289,23 @@ export default function AddDocumentModal({
                       <Package size={24} color="#f47721" />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[styles.optionTitle, isLight && styles.optionTitleLight]}>Add Store Consumable</Text>
-                      <Text style={[styles.optionSubtitle, { color: '#f47721' }]}>Record store supplies & items</Text>
+                      <Text style={[styles.optionTitle, isLight && styles.optionTitleLight]}>
+                        {isPetcOfficeSupplies || consumableEntity === 'PETC' ? 'Add Office Supplies' : 'Add Store Consumable'}
+                      </Text>
+                      <Text style={[styles.optionSubtitle, { color: '#f47721' }]}>
+                        {isPetcOfficeSupplies || consumableEntity === 'PETC' ? 'Record office supplies & inventory' : 'Record store supplies & items'}
+                      </Text>
                     </View>
                   </View>
                   <Text style={[styles.optionDescription, isLight && styles.optionDescriptionLight]}>
-                    Add store consumables, packaging, cups, cleaning materials, and supplies for {activeNav?.label?.replace('Consumables > ', '') || 'Store'}.
+                    {isPetcOfficeSupplies || consumableEntity === 'PETC'
+                      ? 'Add office supplies, printer paper, thermal rolls, ink, and stationery for PETC.'
+                      : `Add store consumables, packaging, cups, cleaning materials, and supplies for ${activeNav?.label?.replace('Consumables > ', '') || 'Store'}.`}
                   </Text>
                   <View style={[styles.optionActionBadge, { backgroundColor: '#f47721' }, isMobile && { width: '100%', alignItems: 'center' }]}>
-                    <Text style={[styles.optionActionText, { color: '#ffffff' }]}>Add Consumable →</Text>
+                    <Text style={[styles.optionActionText, { color: '#ffffff' }]}>
+                      {isPetcOfficeSupplies || consumableEntity === 'PETC' ? 'Add Office Supplies →' : 'Add Consumable →'}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ) : (
@@ -308,7 +323,7 @@ export default function AddDocumentModal({
                     </View>
                   </View>
                   <Text style={[styles.optionDescription, isLight && styles.optionDescriptionLight]}>
-                    Capture physical receipts or vouchers (Emission Sales, CTPL Insurance, Expenses, Consumables) via camera with real-time OCR extraction.
+                    Capture physical receipts or vouchers (Emission Sales, CTPL Insurance, Expenses) via camera with real-time OCR extraction.
                   </Text>
                   <View style={[styles.optionActionBadge, styles.optionActionBadgeScan, isMobile && { width: '100%', alignItems: 'center' }]}>
                     <Text style={[styles.optionActionText, { color: '#34d399' }]}>Scan Receipt →</Text>
@@ -415,12 +430,15 @@ export default function AddDocumentModal({
               <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                 {/* 1. Establishment Selector */}
                 <Text style={[styles.inputLabel, { marginBottom: 6 }, isLight && styles.inputLabelLight]}>
-                  ESTABLISHMENT / STORE *
+                  ESTABLISHMENT / BRANCH *
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-                  {['Knoah Mari', 'Red Goose'].map(store => {
+                  {['PETC', 'Knoah Mari', 'Red Goose'].map(store => {
                     const isSelected = consumableEntity === store;
-                    const isDisabled = (isKnoahEmployee && store !== 'Knoah Mari') || (isRedGooseEmployee && store !== 'Red Goose');
+                    const isDisabled =
+                      (isPetcEmployee && store !== 'PETC') ||
+                      (isKnoahEmployee && store !== 'Knoah Mari') ||
+                      (isRedGooseEmployee && store !== 'Red Goose');
                     return (
                       <TouchableOpacity
                         key={store}
@@ -431,9 +449,9 @@ export default function AddDocumentModal({
                           flexDirection: 'row',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 8,
+                          gap: 6,
                           paddingVertical: 10,
-                          paddingHorizontal: 12,
+                          paddingHorizontal: 8,
                           borderRadius: 8,
                           borderWidth: 1.5,
                           borderColor: isSelected ? '#f47721' : (isLight ? '#e2e8f0' : '#334155'),
@@ -442,12 +460,12 @@ export default function AddDocumentModal({
                           cursor: isDisabled ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        <Building2 size={16} color={isSelected ? '#f47721' : '#94a3b8'} />
+                        <Building2 size={15} color={isSelected ? '#f47721' : '#94a3b8'} />
                         <Text style={{
                           fontWeight: isSelected ? '700' : '500',
-                          fontSize: 13,
+                          fontSize: 12,
                           color: isSelected ? '#f47721' : (isLight ? '#334155' : '#cbd5e1')
-                        }}>
+                        }} numberOfLines={1}>
                           {store}
                         </Text>
                       </TouchableOpacity>
@@ -467,18 +485,24 @@ export default function AddDocumentModal({
                 }}>
                   <Package size={16} color="#fbbf24" />
                   <Text style={{ fontSize: 12, color: isLight ? '#475569' : '#94a3b8' }}>
-                    Classification: <Text style={{ fontWeight: '700', color: isLight ? '#1e293b' : '#f8fafc' }}>Consumables &gt; Store Consumables</Text>
+                    Classification: <Text style={{ fontWeight: '700', color: isLight ? '#1e293b' : '#f8fafc' }}>
+                      {consumableEntity === 'PETC' ? 'Consumables > Office supplies' : 'Consumables > Store Consumables'}
+                    </Text>
                   </Text>
                 </View>
 
                 {/* 3. Item Name */}
                 <View style={{ marginBottom: 14 }}>
                   <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                    ITEM / CONSUMABLE NAME *
+                    {consumableEntity === 'PETC' ? 'OFFICE SUPPLY ITEM NAME *' : 'ITEM / CONSUMABLE NAME *'}
                   </Text>
                   <TextInput
                     style={[styles.input, isLight && styles.inputLight]}
-                    placeholder="e.g. Paper Bags, Takeout Cups, Kitchen Towels, Straws"
+                    placeholder={
+                      consumableEntity === 'PETC'
+                        ? "e.g. A4 Bond Paper, Thermal Paper Rolls, Ballpens, Epson Black Ink 003, Staple Wire"
+                        : "e.g. Paper Bags, Takeout Cups, Kitchen Towels, Straws"
+                    }
                     placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
                     value={consumableName}
                     onChangeText={setConsumableName}
@@ -633,7 +657,9 @@ export default function AddDocumentModal({
                   ) : (
                     <>
                       <Package size={16} color="#fff" />
-                      <Text style={styles.btnPrimaryText}>Add Store Consumable</Text>
+                      <Text style={styles.btnPrimaryText}>
+                        {consumableEntity === 'PETC' ? 'Add Office Supplies' : 'Add Store Consumable'}
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -653,12 +679,12 @@ export default function AddDocumentModal({
                 </Text>
                 <View style={styles.receiptTypeGrid}>
                   {RECEIPT_TYPES.filter(rt => {
-                    if (rt.id === 'consumables-knoah-mari-store' || rt.id === 'consumables-red-goose-store') return false;
+                    if (rt.id === 'consumables-petc-office' || rt.id === 'consumables-knoah-mari-store' || rt.id === 'consumables-red-goose-store') return false;
                     if (isAdmin || hasAllBranchesScope) return true;
                     if (isKnoahEmployee) return rt.entity === 'Knoah Mari' || rt.id.includes('knoah');
                     if (isRedGooseEmployee) return rt.entity === 'Red Goose' || rt.id.includes('red');
                     if (isPetcEmployee) return rt.entity === 'PETC' || rt.id.includes('petc');
-                    if (isConsumablesEmployee) return rt.id === 'consumables-delivery' || rt.category === 'Consumables';
+                    if (isConsumablesEmployee) return false;
                     if (isSalesIncomeEmployee) return rt.category === 'PETC Sales' || rt.category === 'PETC Income';
                     return false;
                   }).map(rt => {

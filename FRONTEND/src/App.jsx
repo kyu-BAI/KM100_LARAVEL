@@ -798,10 +798,17 @@ export default function App() {
 
   const isKnoahUser = isKnoahEmployee || userDept.includes('knoah');
   const isRedGooseUser = isRedGooseEmployee || userDept.includes('red');
+  const isPetcUser = isPetcEmployee || (userDept.includes('petc') || userDept.includes('office'));
+
+  const navSub = (activeNav?.subCategory || '').toLowerCase();
+  const isPetcOfficeSupplies = activeNav?.type === 'consumables' && (
+    navSub.includes('petc') || navSub.includes('office') || (!activeNav?.subCategory && isPetcUser)
+  );
   const isStoreConsumables = activeNav?.type === 'consumables' && (
-    (activeNav?.subCategory && (activeNav.subCategory.toLowerCase().includes('knoah') || activeNav.subCategory.toLowerCase().includes('red'))) ||
+    (activeNav?.subCategory && (navSub.includes('knoah') || navSub.includes('red'))) ||
     (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
   );
+  const isAnyConsumables = activeNav?.type === 'consumables';
 
   // Filter items strictly based on the left sidebar navigation and employee branch scope
   const filteredItems = useMemo(() => {
@@ -1120,9 +1127,16 @@ export default function App() {
     setOcrOrNumber('');
     stopCamera();
 
-    if (isStoreConsumables) {
+    if (isAnyConsumables) {
       setAddMode('store-consumable');
-      const targetEntity = (activeNav.subCategory?.toLowerCase().includes('red') || isRedGooseEmployee) ? 'Red Goose' : 'Knoah Mari';
+      let targetEntity = 'PETC';
+      if (navSub.includes('red') || isRedGooseEmployee) {
+        targetEntity = 'Red Goose';
+      } else if (navSub.includes('knoah') || isKnoahEmployee) {
+        targetEntity = 'Knoah Mari';
+      } else if (navSub.includes('petc') || navSub.includes('office') || isPetcEmployee) {
+        targetEntity = 'PETC';
+      }
       setConsumableEntity(targetEntity);
       setConsumableName('');
       setConsumableQty('1');
@@ -1198,8 +1212,14 @@ export default function App() {
       const numAmount = parseFloat(consumableAmount) || 0;
       const numQty = parseFloat(consumableQty) || 1;
       const recordDate = consumableDate || new Date().toISOString().split('T')[0];
-      const recordEntity = consumableEntity || (isRedGooseEmployee ? 'Red Goose' : 'Knoah Mari');
-      const subId = recordEntity.toLowerCase().includes('red') ? 'red-goose-store-consumables' : 'knoah-mari-store-consumables';
+      const isPetc = consumableEntity === 'PETC';
+      const recordEntity = consumableEntity || (isPetcOfficeSupplies ? 'PETC' : isRedGooseEmployee ? 'Red Goose' : 'Knoah Mari');
+      const subCategoryName = recordEntity === 'PETC' ? 'Office supplies' : 'Store Consumables';
+      const subId = recordEntity === 'PETC'
+        ? 'petc-office-supplies'
+        : recordEntity.toLowerCase().includes('red')
+          ? 'red-goose-store-consumables'
+          : 'knoah-mari-store-consumables';
 
       const record = {
         id,
@@ -1210,7 +1230,7 @@ export default function App() {
         receipt_date: recordDate,
         category: 'Consumables',
         category_id: 'consumables',
-        sub_category: 'Store Consumables',
+        sub_category: subCategoryName,
         sub_category_id: subId,
         entity: recordEntity,
         year: recordDate.split('-')[0] || String(new Date().getFullYear()),
@@ -1221,7 +1241,7 @@ export default function App() {
         status: consumableStatus || 'In Stock',
         file_format: 'ITEM',
         file_size: '1 KB',
-        description: consumableNotes.trim() || `${recordEntity} Store Consumables: ${itemName}`,
+        description: consumableNotes.trim() || `${recordEntity} ${subCategoryName}: ${itemName}`,
         notes: consumableNotes.trim(),
         preview_data: {
           itemName,
@@ -1230,7 +1250,7 @@ export default function App() {
           amount: numAmount,
           date: recordDate,
           establishment: recordEntity,
-          category: 'Consumables > Store Consumables',
+          category: `Consumables > ${subCategoryName}`,
           notes: consumableNotes.trim()
         }
       };
@@ -1242,7 +1262,7 @@ export default function App() {
       const mappedItem = mapFromDb(record, 'consumables_receipts');
       setItems(prev => [mappedItem, ...prev.filter(i => i.id !== id)]);
       closeAddModal();
-      showNotice(`Store consumable "${itemName}" saved successfully!`);
+      showNotice(`${recordEntity === 'PETC' ? 'Office supply' : 'Store consumable'} "${itemName}" saved successfully!`);
       fetchData(true);
     } catch (err) {
       console.error('Failed to save store consumable:', err);
@@ -2145,7 +2165,7 @@ export default function App() {
                 </View>
               ) : (
                 <View style={styles.emptyContainer}>
-                  {isStoreConsumables ? (
+                  {isAnyConsumables ? (
                     <Package size={44} color="#f47721" />
                   ) : (
                     <Layers size={44} color={isLight ? '#cbd5e1' : '#334155'} />
@@ -2153,20 +2173,28 @@ export default function App() {
                   <Text style={[styles.emptyTitle, isLight && styles.emptyTitleLight]}>
                     {searchQuery
                       ? 'No items match your search'
-                      : isStoreConsumables
-                        ? `No store consumables recorded in ${activeNav.label?.replace('Consumables > ', '') || 'Store'}`
-                        : items.length === 0
-                          ? 'No files or documents currently in system'
-                          : `No records found in ${activeNav.label}`}
+                      : isPetcOfficeSupplies
+                        ? 'No office supplies recorded for PETC'
+                        : isStoreConsumables
+                          ? `No store consumables recorded in ${activeNav.label?.replace('Consumables > ', '') || 'Store'}`
+                          : isAnyConsumables
+                            ? 'No supplies or consumables recorded yet'
+                            : items.length === 0
+                              ? 'No files or documents currently in system'
+                              : `No records found in ${activeNav.label}`}
                   </Text>
                   <Text style={[styles.emptySubtitle, isLight && styles.emptySubtitleLight]}>
                     {searchQuery
                       ? 'Try searching with a different item name or keyword.'
-                      : isStoreConsumables
-                        ? 'There are currently no store consumables recorded for this establishment. Tap "Add Consumable" to record your first consumable item.'
-                        : items.length === 0
-                          ? 'Your inventory database is currently empty. Tap "Scan Receipt" to add your first record.'
-                          : 'You can tap "Scan Receipt" to add a new document, or choose another category from the tabs above.'}
+                      : isPetcOfficeSupplies
+                        ? 'There are currently no office supplies recorded for PETC. Tap "Add Office Supplies" to record your first item.'
+                        : isStoreConsumables
+                          ? 'There are currently no store consumables recorded for this establishment. Tap "Add Consumable" to record your first consumable item.'
+                          : isAnyConsumables
+                            ? 'There are currently no supplies recorded. Tap "Add Supplies" to record your first item.'
+                            : items.length === 0
+                              ? 'Your inventory database is currently empty. Tap "Scan Receipt" to add your first record.'
+                              : 'You can tap "Scan Receipt" to add a new document, or choose another category from the tabs above.'}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {searchQuery ? (
@@ -2182,13 +2210,19 @@ export default function App() {
                       style={styles.heroScanBtn}
                       onPress={openAddModal}
                     >
-                      {isStoreConsumables ? (
+                      {isAnyConsumables ? (
                         <Package size={15} color="#ffffff" />
                       ) : (
                         <Camera size={15} color="#ffffff" />
                       )}
                       <Text style={styles.heroScanBtnText}>
-                        {isStoreConsumables ? 'Add Store Consumable' : 'Scan New Receipt'}
+                        {isPetcOfficeSupplies
+                          ? 'Add Office Supplies'
+                          : isStoreConsumables
+                            ? 'Add Store Consumable'
+                            : isAnyConsumables
+                              ? 'Add Supplies'
+                              : 'Scan New Receipt'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -2359,15 +2393,29 @@ export default function App() {
             style={styles.mobileFloatingBtn}
             onPress={openAddModal}
             activeOpacity={0.85}
-            title={isStoreConsumables ? "Add store consumable" : "Scan receipt with camera"}
+            title={
+              isPetcOfficeSupplies
+                ? "Add office supplies"
+                : isStoreConsumables
+                  ? "Add store consumable"
+                  : isAnyConsumables
+                    ? "Add supplies"
+                    : "Scan receipt with camera"
+            }
           >
-            {isStoreConsumables ? (
+            {isAnyConsumables ? (
               <Package size={20} color="#ffffff" />
             ) : (
               <Camera size={20} color="#ffffff" />
             )}
             <Text style={styles.mobileFloatingBtnText}>
-              {isStoreConsumables ? 'Add Consumable' : 'Scan Receipt'}
+              {isPetcOfficeSupplies
+                ? 'Add Office Supplies'
+                : isStoreConsumables
+                  ? 'Add Consumables'
+                  : isAnyConsumables
+                    ? 'Add Supplies'
+                    : 'Scan Receipt'}
             </Text>
           </TouchableOpacity>
         </View>

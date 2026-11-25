@@ -40,10 +40,19 @@ export default function TopHeader({
   const userBranch = (currentUser?.assignedBranch || currentUser?.branch || '').toLowerCase();
   const isKnoahUser = isEmployee && userBranch.includes('knoah');
   const isRedGooseUser = isEmployee && userBranch.includes('red');
+  const isPetcUser = isEmployee && (userBranch.includes('petc') || userBranch.includes('office') || userBranch.includes('emission') || userBranch.includes('insurance'));
+
+  const sub = (activeNav?.subCategory || '').toLowerCase();
+  const isPetcOfficeSupplies = activeNav?.type === 'consumables' && (
+    sub.includes('petc') || sub.includes('office') || (!activeNav?.subCategory && isPetcUser)
+  );
+
   const isStoreConsumables = activeNav?.type === 'consumables' && (
-    (activeNav?.subCategory && (activeNav.subCategory.toLowerCase().includes('knoah') || activeNav.subCategory.toLowerCase().includes('red'))) ||
+    (activeNav?.subCategory && (sub.includes('knoah') || sub.includes('red'))) ||
     (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
   );
+
+  const isAnyConsumables = activeNav?.type === 'consumables';
 
   return (
     <View
@@ -141,21 +150,43 @@ export default function TopHeader({
 
       {/* Right Header Action Cluster */}
       <View style={[styles.topHeaderRight, isSmallMobile && { gap: 5 }]}>
-        {/* PRIMARY HERO BUTTON: SCAN RECEIPT OR ADD STORE CONSUMABLE */}
+        {/* PRIMARY HERO BUTTON: SCAN RECEIPT OR ADD SUPPLIES */}
         <TouchableOpacity
           style={[styles.heroScanBtn, isSmallMobile && { paddingHorizontal: 9, paddingVertical: 7, gap: 5 }]}
           onPress={openAddModal}
-          title={isStoreConsumables ? "Add store consumable item" : "Scan physical receipt or upload document"}
+          title={
+            isPetcOfficeSupplies
+              ? "Add office supplies item"
+              : isStoreConsumables
+                ? "Add store consumable item"
+                : isAnyConsumables
+                  ? "Add supplies item"
+                  : "Scan physical receipt or upload document"
+          }
           accessibilityRole="button"
-          accessibilityLabel={isStoreConsumables ? "Add store consumable item" : "Scan receipt or upload document"}
+          accessibilityLabel={
+            isPetcOfficeSupplies
+              ? "Add office supplies item"
+              : isStoreConsumables
+                ? "Add store consumable item"
+                : isAnyConsumables
+                  ? "Add supplies item"
+                  : "Scan receipt or upload document"
+          }
         >
-          {isStoreConsumables ? (
+          {isAnyConsumables ? (
             <Package size={isSmallMobile ? 14 : 16} color="#ffffff" />
           ) : (
             <Camera size={isSmallMobile ? 14 : 16} color="#ffffff" />
           )}
           <Text style={[styles.heroScanBtnText, isSmallMobile && { fontSize: 11 }]}>
-            {isStoreConsumables ? (width < 440 ? 'Add' : 'Add Consumable') : (width < 440 ? 'Scan' : 'Scan Receipt')}
+            {isPetcOfficeSupplies
+              ? (width < 440 ? 'Add' : 'Add Office Supplies')
+              : isStoreConsumables
+                ? (width < 440 ? 'Add' : 'Add Consumable')
+                : isAnyConsumables
+                  ? (width < 440 ? 'Add' : 'Add Supplies')
+                  : (width < 440 ? 'Scan' : 'Scan Receipt')}
           </Text>
         </TouchableOpacity>
 
