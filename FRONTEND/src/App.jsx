@@ -1,6 +1,7 @@
 import AddDocumentModal from './components/documents/AddDocumentModal';
 import DocumentTableView from './components/documents/DocumentTableView';
 import ConsumablesTableView from './components/documents/ConsumablesTableView';
+import SalesIncomeCalendarView from './components/documents/SalesIncomeCalendarView';
 import DocumentCardsView from './components/documents/DocumentCardsView';
 import DocumentViewerModal from './components/documents/DocumentViewerModal';
 import RenameDocumentModal from './components/documents/RenameDocumentModal';
@@ -817,6 +818,9 @@ export default function App() {
     (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
   );
   const isAnyConsumables = activeNav?.type === 'consumables';
+  const isSalesView = activeNav?.type === 'sales' || activeNav?.type === 'petc-sales';
+  const isIncomeView = activeNav?.type === 'income' || activeNav?.type === 'petc-income';
+  const isSalesOrIncomeView = isSalesView || isIncomeView;
 
   // Filter items strictly based on the left sidebar navigation and employee branch scope
   const filteredItems = useMemo(() => {
@@ -1358,6 +1362,100 @@ export default function App() {
     } finally {
       setIsSavingConsumable(false);
       setEditingConsumableId(null);
+    }
+  };
+
+  // --- Daily Sales / Income Handler (Calendar-based, no receipts) ---
+  const handleSaveDailySalesIncome = async ({ id, mode, entity, date, amount, notes }) => {
+    try {
+      const isSales = mode === 'sales';
+      const isEditing = Boolean(id);
+      const recordId = id || `${isSales ? 'SLS' : 'INC'}-${Date.now()}`;
+      const recordDate = date || new Date().toISOString().split('T')[0];
+      const year = recordDate.split('-')[0] || String(new Date().getFullYear());
+      const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const monthIdx = (parseInt(recordDate.split('-')[1], 10) || 1) - 1;
+      const month = monthNames[monthIdx] || 'JAN';
+      const ent = entity || 'PETC';
+      const entLower = ent.toLowerCase();
+
+      let subCategory = '';
+      let subCategoryId = '';
+      if (isSales) {
+        if (entLower.includes('red')) {
+          subCategory = 'Red Goose Sales 2026';
+          subCategoryId = 'red-goose-sales-2026';
+        } else if (entLower.includes('knoah')) {
+          subCategory = 'Knoah Mari Sales 2026';
+          subCategoryId = 'knoah-mari-sales-2026';
+        } else {
+          subCategory = 'Sales 2026 (PETC)';
+          subCategoryId = 'sales-2026-petc';
+        }
+      } else {
+        if (entLower.includes('red')) {
+          subCategory = 'Red Goose Income 2026';
+          subCategoryId = 'red-goose-income-2026';
+        } else if (entLower.includes('knoah')) {
+          subCategory = 'Knoah Mari Income 2026';
+          subCategoryId = 'knoah-mari-income-2026';
+        } else {
+          subCategory = 'Income 2026 (PETC)';
+          subCategoryId = 'income-2026-petc';
+        }
+      }
+
+      const targetTable = isSales && ent === 'PETC' ? 'petc_sales_receipts' : 'inventory_items';
+      const labelType = isSales ? 'Daily Sales' : 'Daily Income';
+      const titleText = `${ent} ${labelType} (${recordDate})`;
+      const fileName = `${isSales ? 'SALES' : 'INC'}_${ent.replace(/\s+/g, '_').toUpperCase()}_${recordDate}.daily`;
+
+      const record = {
+        id: recordId,
+        table: targetTable,
+        file_name: fileName,
+        title: titleText,
+        establishment: ent,
+        receipt_date: recordDate,
+        category: isSales ? 'Sales' : 'Income',
+        category_id: isSales ? 'sales' : 'income',
+        sub_category: subCategory,
+        sub_category_id: subCategoryId,
+        entity: ent,
+        year,
+        month,
+        amount: parseFloat(amount) || 0,
+        quantity: 1,
+        unit: 'day',
+        status: 'Recorded',
+        file_format: 'DAILY',
+        file_size: '1 KB',
+        description: notes || `${labelType} recorded for ${ent} on ${recordDate}`,
+        notes: notes || '',
+        preview_data: {
+          establishment: ent,
+          receipt_date: recordDate,
+          amount: parseFloat(amount) || 0,
+          description: notes || `${labelType} for ${ent}`,
+          entry_type: 'daily_calendar'
+        }
+      };
+
+      if (isLaravelDriver()) {
+        if (isEditing) {
+          await backend.updateReceipt(recordId, targetTable, record);
+        } else {
+          await backend.createReceipt(record, targetTable);
+        }
+      }
+
+      const mapped = mapFromDb(record, targetTable);
+      setItems(prev => [mapped, ...prev.filter(i => i.id !== recordId)]);
+      showNotice(`${labelType} for ${ent} (${recordDate}) ${isEditing ? 'updated' : 'saved'}!`);
+      fetchData(true);
+    } catch (err) {
+      console.error('Failed to save daily sales/income:', err);
+      showNotice(`Error saving daily entry: ${err.message || 'Server error'}`);
     }
   };
 
@@ -2238,6 +2336,21 @@ export default function App() {
                 <ActivityIndicator size="large" color="#f47721" />
                 <Text style={styles.loadingText}>Loading inventory records</Text>
               </View>
+            ) : isSalesOrIncomeView ? (
+              <SalesIncomeCalendarView
+                mode={isSalesView ? 'sales' : 'income'}
+                filteredItems={filteredItems}
+                onSaveDailyEntry={handleSaveDailySalesIncome}
+                onDeleteItem={handleDeleteItem}
+                onExportExcel={() => exportFolderToExcel(activeNav)}
+                isAdmin={isAdmin}
+                isPetcEmployee={isPetcEmployee}
+                isKnoahEmployee={isKnoahEmployee}
+                isRedGooseEmployee={isRedGooseEmployee}
+                isLight={isLight}
+                activeNav={activeNav}
+                styles={styles}
+              />
             ) : filteredItems.length === 0 ? (
               activeNav.type === 'all' && !showAllFiles ? (
                 <View style={styles.emptyContainer}>

@@ -795,6 +795,7 @@ export default function AddDocumentModal({
                 <View style={styles.receiptTypeGrid}>
                   {RECEIPT_TYPES.filter(rt => {
                     if (rt.id === 'consumables-petc-office' || rt.id === 'consumables-knoah-mari-store' || rt.id === 'consumables-red-goose-store') return false;
+                    if (rt.category === 'Sales' || rt.category === 'Income') return false;
                     if (isAdmin || hasAllBranchesScope) return true;
                     if (isKnoahEmployee) return rt.entity === 'Knoah Mari' || rt.id.includes('knoah');
                     if (isRedGooseEmployee) return rt.entity === 'Red Goose' || rt.id.includes('red');

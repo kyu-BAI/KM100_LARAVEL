@@ -150,7 +150,8 @@ export default function TopHeader({
 
       {/* Right Header Action Cluster */}
       <View style={[styles.topHeaderRight, isSmallMobile && { gap: 5 }]}>
-        {/* PRIMARY HERO BUTTON: SCAN RECEIPT OR ADD SUPPLIES */}
+        {/* PRIMARY HERO BUTTON: SCAN RECEIPT OR ADD SUPPLIES (Hidden on Daily Sales/Income calendar view) */}
+        {!(activeNav?.type === 'sales' || activeNav?.type === 'petc-sales' || activeNav?.type === 'income' || activeNav?.type === 'petc-income') && (
         <TouchableOpacity
           style={[styles.heroScanBtn, isSmallMobile && { paddingHorizontal: 9, paddingVertical: 7, gap: 5 }]}
           onPress={() => openAddModal()}
@@ -189,6 +190,7 @@ export default function TopHeader({
                   : (width < 440 ? 'Scan' : 'Scan Receipt')}
           </Text>
         </TouchableOpacity>
+        )}
 
         {/* Live Sync Pill (Desktop & Tablet only) */}
         {width >= 1280 && (
