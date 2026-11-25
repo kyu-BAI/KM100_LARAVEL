@@ -660,6 +660,7 @@ export default function App() {
     'knoah_mari_expense_receipts',
     'red_goose_expense_receipts',
     'petc_sales_receipts',
+    'income_receipts',
     'petc_insurance_receipts',
     'petc_expense_receipts',
     'consumables_receipts',
@@ -1338,10 +1339,11 @@ export default function App() {
       };
 
       if (isLaravelDriver()) {
-        if (isEditing) {
-          await backend.updateReceipt(id, 'consumables_receipts', record);
-        } else {
-          await backend.createReceipt(record, 'consumables_receipts');
+        const res = isEditing
+          ? await backend.updateReceipt(id, 'consumables_receipts', record)
+          : await backend.createReceipt(record, 'consumables_receipts');
+        if (res?.error) {
+          throw new Error(res.error?.data?.message || res.error?.message || 'Failed to save consumable to database');
         }
       }
 
@@ -1405,7 +1407,9 @@ export default function App() {
         }
       }
 
-      const targetTable = isSales && ent === 'PETC' ? 'petc_sales_receipts' : 'inventory_items';
+      const targetTable = isSales
+        ? (ent === 'PETC' ? 'petc_sales_receipts' : 'inventory_items')
+        : 'income_receipts';
       const labelType = isSales ? 'Daily Sales' : 'Daily Income';
       const titleText = `${ent} ${labelType} (${recordDate})`;
       const fileName = `${isSales ? 'SALES' : 'INC'}_${ent.replace(/\s+/g, '_').toUpperCase()}_${recordDate}.daily`;
@@ -1442,10 +1446,11 @@ export default function App() {
       };
 
       if (isLaravelDriver()) {
-        if (isEditing) {
-          await backend.updateReceipt(recordId, targetTable, record);
-        } else {
-          await backend.createReceipt(record, targetTable);
+        const res = isEditing
+          ? await backend.updateReceipt(recordId, targetTable, record)
+          : await backend.createReceipt(record, targetTable);
+        if (res?.error) {
+          throw new Error(res.error?.data?.message || res.error?.message || 'Failed to save daily entry to database');
         }
       }
 

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\BaseReceipt;
 use App\Models\ConsumablesReceipt;
+use App\Models\IncomeReceipt;
 use App\Models\InventoryItem;
 use App\Models\KnoahMariExpenseReceipt;
 use App\Models\PetcExpenseReceipt;
@@ -36,6 +37,7 @@ class ReceiptService
     {
         return match ($tableName) {
             'petc_sales_receipts' => PetcSalesReceipt::class,
+            'income_receipts' => IncomeReceipt::class,
             'petc_insurance_receipts' => PetcInsuranceReceipt::class,
             'petc_expense_receipts' => PetcExpenseReceipt::class,
             'red_goose_expense_receipts' => RedGooseExpenseReceipt::class,
