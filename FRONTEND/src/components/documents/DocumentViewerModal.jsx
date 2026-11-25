@@ -257,26 +257,50 @@ export default function DocumentViewerModal({
                       {viewItem?.description || 'Store consumable supplies and materials inventory item.'}
                     </Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+                      <View style={{ minWidth: 80 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>ITEM NO.</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: isLight ? '#0f172a' : '#f8fafc' }}>
+                          {viewItem?.itemNo || viewItem?.previewData?.itemNo || '1'}
+                        </Text>
+                      </View>
                       <View style={{ minWidth: 120 }}>
                         <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>ESTABLISHMENT</Text>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#f47721' }}>{viewItem?.entity}</Text>
                       </View>
+                      <View style={{ minWidth: 130 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>SUPPLIER</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: isLight ? '#0f172a' : '#f8fafc' }}>
+                          {viewItem?.supplier || viewItem?.previewData?.supplier || (viewItem?.establishment !== viewItem?.entity ? viewItem?.establishment : '') || '-'}
+                        </Text>
+                      </View>
+                      <View style={{ minWidth: 110 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>OR / SI NO.</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', fontFamily: 'monospace', color: isLight ? '#0284c7' : '#38bdf8' }}>
+                          {viewItem?.orSiNo || viewItem?.previewData?.orSiNo || viewItem?.previewData?.or_si_no || '-'}
+                        </Text>
+                      </View>
                       <View style={{ minWidth: 100 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>INVENTORY COUNT</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>QTY & UNIT</Text>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: isLight ? '#0f172a' : '#f8fafc' }}>
-                          {viewItem?.quantity || 1} {viewItem?.unit || 'pcs'}
+                          {viewItem?.quantity || viewItem?.previewData?.quantity || 1} {viewItem?.unit || viewItem?.previewData?.unitMeasure || 'pcs'}
+                        </Text>
+                      </View>
+                      <View style={{ minWidth: 100 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>UNIT COST</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: isLight ? '#475569' : '#cbd5e1' }}>
+                          ₱{parseFloat(viewItem?.unitCost || viewItem?.previewData?.unitCost || ((viewItem?.quantity > 0 && viewItem?.amount > 0) ? (viewItem.amount / viewItem.quantity) : 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Text>
                       </View>
                       <View style={{ minWidth: 120 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>TOTAL VALUE</Text>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#10b981' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>TOTAL AMOUNT</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#10b981' }}>
                           {viewItem?.amount ? `₱${parseFloat(viewItem.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₱0.00'}
                         </Text>
                       </View>
                       <View style={{ minWidth: 110 }}>
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>DATE RECORDED</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>DATE</Text>
                         <Text style={{ fontSize: 13, fontWeight: '600', color: isLight ? '#0f172a' : '#f8fafc' }}>
-                          {viewItem?.receiptDate || viewItem?.scannedDate || viewItem?.createdAt || '-'}
+                          {viewItem?.receiptDate || viewItem?.previewData?.date || viewItem?.scannedDate || viewItem?.createdAt || '-'}
                         </Text>
                       </View>
                     </View>

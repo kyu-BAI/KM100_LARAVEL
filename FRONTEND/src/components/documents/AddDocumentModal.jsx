@@ -109,6 +109,15 @@ export default function AddDocumentModal({
   setConsumableNotes,
   consumableStatus,
   setConsumableStatus,
+  consumableSupplier,
+  setConsumableSupplier,
+  consumableOrSiNo,
+  setConsumableOrSiNo,
+  consumableUnitCost,
+  setConsumableUnitCost,
+  consumableItemNo,
+  setConsumableItemNo,
+  editingConsumableId,
   isSavingConsumable,
   handleSaveStoreConsumable,
   isLight,
@@ -491,88 +500,23 @@ export default function AddDocumentModal({
                   </Text>
                 </View>
 
-                {/* 3. Item Name */}
-                <View style={{ marginBottom: 14 }}>
-                  <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                    {consumableEntity === 'PETC' ? 'OFFICE SUPPLY ITEM NAME *' : 'ITEM / CONSUMABLE NAME *'}
-                  </Text>
-                  <TextInput
-                    style={[styles.input, isLight && styles.inputLight]}
-                    placeholder={
-                      consumableEntity === 'PETC'
-                        ? "e.g. A4 Bond Paper, Thermal Paper Rolls, Ballpens, Epson Black Ink 003, Staple Wire"
-                        : "e.g. Paper Bags, Takeout Cups, Kitchen Towels, Straws"
-                    }
-                    placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
-                    value={consumableName}
-                    onChangeText={setConsumableName}
-                  />
-                </View>
-
-                {/* 4. Quantity & Unit Row */}
+                {/* 3. Item No. & Date Row (Columns 1 & 2 from reference) */}
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 0.8 }}>
                     <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                      QUANTITY *
+                      ITEM NO.
                     </Text>
                     <TextInput
                       style={[styles.input, isLight && styles.inputLight]}
-                      placeholder="1"
+                      placeholder="Auto (#)"
                       placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
-                      keyboardType="numeric"
-                      value={consumableQty}
-                      onChangeText={setConsumableQty}
+                      value={consumableItemNo}
+                      onChangeText={setConsumableItemNo}
                     />
                   </View>
                   <View style={{ flex: 1.2 }}>
                     <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                      UNIT *
-                    </Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                      {['pcs', 'packs', 'boxes', 'rolls', 'bottles', 'kg'].map(u => (
-                        <TouchableOpacity
-                          key={u}
-                          onPress={() => setConsumableUnit(u)}
-                          style={{
-                            paddingHorizontal: 8,
-                            paddingVertical: 5,
-                            borderRadius: 4,
-                            borderWidth: 1,
-                            borderColor: consumableUnit === u ? '#f47721' : (isLight ? '#cbd5e1' : '#334155'),
-                            backgroundColor: consumableUnit === u ? '#f47721' : 'transparent'
-                          }}
-                        >
-                          <Text style={{
-                            fontSize: 11,
-                            fontWeight: '600',
-                            color: consumableUnit === u ? '#ffffff' : (isLight ? '#475569' : '#94a3b8')
-                          }}>
-                            {u}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                </View>
-
-                {/* 5. Total Value & Date Row */}
-                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                      TOTAL VALUE / COST (PHP)
-                    </Text>
-                    <TextInput
-                      style={[styles.input, isLight && styles.inputLight]}
-                      placeholder="0.00"
-                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
-                      keyboardType="numeric"
-                      value={consumableAmount}
-                      onChangeText={setConsumableAmount}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                      DATE RECORDED *
+                      DATE *
                     </Text>
                     <TextInput
                       style={[styles.input, isLight && styles.inputLight]}
@@ -584,7 +528,155 @@ export default function AddDocumentModal({
                   </View>
                 </View>
 
-                {/* 6. Stock Status */}
+                {/* 4. Particulars / Item Name (Column 3 from reference) */}
+                <View style={{ marginBottom: 14 }}>
+                  <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                    PARTICULARS *
+                  </Text>
+                  <TextInput
+                    style={[styles.input, isLight && styles.inputLight]}
+                    placeholder={
+                      consumableEntity === 'PETC'
+                        ? "e.g. A4 Bond Paper, Thermal Paper Rolls, Ballpens, Epson Black Ink 003, Staple Wire"
+                        : "e.g. Bleach, Dishwashing Liquid, Trash Bags, Paper Cups, Hand Soap, Mop Heads"
+                    }
+                    placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                    value={consumableName}
+                    onChangeText={setConsumableName}
+                  />
+                </View>
+
+                {/* 5. Supplier & OR/SI No. Row (Columns 4 & 5 from reference) */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
+                  <View style={{ flex: 1.2 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      SUPPLIER
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="e.g. SM Hypermarket, Puregold, ABC Wholesaler"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      value={consumableSupplier}
+                      onChangeText={setConsumableSupplier}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      OR / SI NO.
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="e.g. OR #12345, SI #98765"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      value={consumableOrSiNo}
+                      onChangeText={setConsumableOrSiNo}
+                    />
+                  </View>
+                </View>
+
+                {/* 6. Quantity, Unit Measure & Unit Cost Row (Columns 6, 7 & 8 from reference) */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+                  <View style={{ flex: 1, minWidth: 90 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      QTY *
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="1"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      keyboardType="numeric"
+                      value={consumableQty}
+                      onChangeText={(val) => {
+                        setConsumableQty(val);
+                        const q = parseFloat(val) || 0;
+                        const uc = parseFloat(consumableUnitCost) || 0;
+                        if (q > 0 && uc > 0) {
+                          setConsumableAmount((q * uc).toFixed(2));
+                        }
+                      }}
+                    />
+                  </View>
+                  <View style={{ flex: 1.2, minWidth: 110 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      UNIT MEASURE *
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="pcs / bottle / pack"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      value={consumableUnit}
+                      onChangeText={setConsumableUnit}
+                    />
+                  </View>
+                  <View style={{ flex: 1.2, minWidth: 110 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      UNIT COST (PHP)
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="0.00"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      keyboardType="numeric"
+                      value={consumableUnitCost}
+                      onChangeText={(val) => {
+                        setConsumableUnitCost(val);
+                        const uc = parseFloat(val) || 0;
+                        const q = parseFloat(consumableQty) || 0;
+                        if (q > 0 && uc > 0) {
+                          setConsumableAmount((q * uc).toFixed(2));
+                        }
+                      }}
+                    />
+                  </View>
+                </View>
+
+                {/* Quick Unit Measure Presets */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14, marginTop: -6 }}>
+                  {['pcs', 'bottle', 'gallon', 'box', 'pack', 'roll', 'can', 'kg', 'set'].map(u => (
+                    <TouchableOpacity
+                      key={u}
+                      onPress={() => setConsumableUnit(u)}
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 4,
+                        borderWidth: 1,
+                        borderColor: consumableUnit === u ? '#f47721' : (isLight ? '#cbd5e1' : '#334155'),
+                        backgroundColor: consumableUnit === u ? (isLight ? '#fff7ed' : 'rgba(244, 119, 33, 0.2)') : 'transparent'
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: 11,
+                        fontWeight: '600',
+                        color: consumableUnit === u ? '#f47721' : (isLight ? '#475569' : '#94a3b8')
+                      }}>
+                        {u}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* 7. Total Amount (Column 9 from reference) */}
+                <View style={{ marginBottom: 14 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight, { marginBottom: 0 }]}>
+                      TOTAL AMOUNT (PHP) *
+                    </Text>
+                    <Text style={{ fontSize: 11, color: isLight ? '#059669' : '#34d399', fontWeight: '600' }}>
+                      Auto-computed (Qty × Unit Cost)
+                    </Text>
+                  </View>
+                  <TextInput
+                    style={[styles.input, { fontWeight: '700', fontSize: 15 }, isLight && styles.inputLight]}
+                    placeholder="0.00"
+                    placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                    keyboardType="numeric"
+                    value={consumableAmount}
+                    onChangeText={setConsumableAmount}
+                  />
+                </View>
+
+                {/* 8. Stock Status */}
                 <View style={{ marginBottom: 14 }}>
                   <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
                     INVENTORY STATUS
@@ -623,14 +715,14 @@ export default function AddDocumentModal({
                   </View>
                 </View>
 
-                {/* 7. Notes & Description */}
+                {/* 9. Notes & Storage Location */}
                 <View style={{ marginBottom: 14 }}>
                   <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
-                    SUPPLIER / STORAGE NOTES (OPTIONAL)
+                    REMARKS / STORAGE LOCATION (OPTIONAL)
                   </Text>
                   <TextInput
-                    style={[styles.input, { minHeight: 60, textAlignVertical: 'top' }, isLight && styles.inputLight]}
-                    placeholder="e.g. Delivered by ABC Packaging; Stored in pantry shelf 2"
+                    style={[styles.input, { minHeight: 50, textAlignVertical: 'top' }, isLight && styles.inputLight]}
+                    placeholder="e.g. Stored in ground floor supply cabinet; purchased for cleaning"
                     placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
                     multiline
                     value={consumableNotes}
@@ -656,9 +748,9 @@ export default function AddDocumentModal({
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <>
-                      <Package size={16} color="#fff" />
+                      <Check size={16} color="#fff" />
                       <Text style={styles.btnPrimaryText}>
-                        {consumableEntity === 'PETC' ? 'Add Office Supplies' : 'Add Store Consumable'}
+                        {editingConsumableId ? 'Update Consumable' : 'Save to Consumables Table'}
                       </Text>
                     </>
                   )}

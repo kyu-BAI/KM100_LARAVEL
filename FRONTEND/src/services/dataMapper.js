@@ -66,11 +66,21 @@ export function mapFromDb(row, tableName = '') {
     : (row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : '');
   const recDate = row.receipt_date || row.preview_data?.receipt_date || '';
 
+  const preview = row.preview_data || {};
+  const supplier = preview.supplier || (row.establishment && row.establishment !== rawEntity ? row.establishment : '') || '';
+  const orSiNo = preview.orSiNo || preview.or_si_no || '';
+  const unitCost = Number(preview.unitCost || preview.unit_cost) || (Number(row.quantity) > 0 && Number(row.amount) > 0 ? (Number(row.amount) / Number(row.quantity)) : 0);
+  const itemNo = preview.itemNo || preview.item_no || '';
+
   return {
     id: row.id,
     fileName: row.file_name,
     title: row.title || row.file_name,
     establishment: row.establishment || row.preview_data?.establishment || '',
+    supplier: supplier,
+    orSiNo: orSiNo,
+    unitCost: unitCost,
+    itemNo: itemNo,
     receiptDate: recDate,
     scannedDate: scanDate,
     description: row.description || row.preview_data?.description || '',
@@ -98,11 +108,17 @@ export function mapFromDb(row, tableName = '') {
 }
 
 export function mapToDb(item) {
+  const preview = item.previewData || {};
+  if (item.supplier) preview.supplier = item.supplier;
+  if (item.orSiNo) preview.orSiNo = item.orSiNo;
+  if (item.unitCost !== undefined) preview.unitCost = item.unitCost;
+  if (item.itemNo) preview.itemNo = item.itemNo;
+
   return {
     id: item.id,
     file_name: item.fileName || item.title || 'document.pdf',
     title: item.title || item.fileName || 'Untitled Document',
-    establishment: item.establishment || '',
+    establishment: item.establishment || item.supplier || '',
     receipt_date: item.receiptDate || '',
     description: item.description || '',
     category: item.category || '',
@@ -122,7 +138,7 @@ export function mapToDb(item) {
     file_path: item.filePath || '',
     notes: item.notes || '',
     tags: Array.isArray(item.tags) ? item.tags : [],
-    preview_data: item.previewData || null,
+    preview_data: preview,
     updated_at: new Date().toISOString()
   };
 }

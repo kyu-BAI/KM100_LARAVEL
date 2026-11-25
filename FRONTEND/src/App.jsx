@@ -1,5 +1,6 @@
 import AddDocumentModal from './components/documents/AddDocumentModal';
 import DocumentTableView from './components/documents/DocumentTableView';
+import ConsumablesTableView from './components/documents/ConsumablesTableView';
 import DocumentCardsView from './components/documents/DocumentCardsView';
 import DocumentViewerModal from './components/documents/DocumentViewerModal';
 import RenameDocumentModal from './components/documents/RenameDocumentModal';
@@ -277,15 +278,20 @@ export default function App() {
   const [renameNewName, setRenameNewName] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
 
-  // Store Consumables Form State (for Knoah Mari and Red Goose store supplies)
+  // Consumables Form State (PETC, Knoah Mari, Red Goose - matching 9 reference columns)
   const [consumableEntity, setConsumableEntity] = useState('Knoah Mari');
+  const [consumableItemNo, setConsumableItemNo] = useState('');
+  const [consumableDate, setConsumableDate] = useState(new Date().toISOString().split('T')[0]);
   const [consumableName, setConsumableName] = useState('');
+  const [consumableSupplier, setConsumableSupplier] = useState('');
+  const [consumableOrSiNo, setConsumableOrSiNo] = useState('');
   const [consumableQty, setConsumableQty] = useState('1');
   const [consumableUnit, setConsumableUnit] = useState('pcs');
+  const [consumableUnitCost, setConsumableUnitCost] = useState('');
   const [consumableAmount, setConsumableAmount] = useState('');
-  const [consumableDate, setConsumableDate] = useState(new Date().toISOString().split('T')[0]);
   const [consumableNotes, setConsumableNotes] = useState('');
   const [consumableStatus, setConsumableStatus] = useState('In Stock');
+  const [editingConsumableId, setEditingConsumableId] = useState(null);
   const [isSavingConsumable, setIsSavingConsumable] = useState(false);
 
 
@@ -1112,7 +1118,7 @@ export default function App() {
   };
 
   // Open & Close Add Document Modal
-  const openAddModal = () => {
+  const openAddModal = (itemToEdit = null) => {
     setInsertedFile(null);
     setCapturedReceiptPhoto(null);
     setScannedRefNo(`OR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
@@ -1129,6 +1135,29 @@ export default function App() {
     setOcrOrNumber('');
     stopCamera();
 
+    // If editing an existing consumable item
+    if (itemToEdit) {
+      const preview = itemToEdit.previewData || {};
+      setEditingConsumableId(itemToEdit.id);
+      setConsumableEntity(itemToEdit.entity || 'PETC');
+      setConsumableItemNo(itemToEdit.itemNo || preview.itemNo || '');
+      setConsumableDate(itemToEdit.receiptDate || preview.date || new Date().toISOString().split('T')[0]);
+      setConsumableName(itemToEdit.title || preview.particulars || itemToEdit.fileName?.replace(/\.item$/i, '') || '');
+      setConsumableSupplier(itemToEdit.supplier || preview.supplier || (itemToEdit.establishment !== itemToEdit.entity ? itemToEdit.establishment : '') || '');
+      setConsumableOrSiNo(itemToEdit.orSiNo || preview.orSiNo || preview.or_si_no || '');
+      setConsumableQty(String(itemToEdit.quantity || preview.quantity || 1));
+      setConsumableUnit(itemToEdit.unit || preview.unitMeasure || 'pcs');
+      setConsumableUnitCost(String(itemToEdit.unitCost || preview.unitCost || ''));
+      setConsumableAmount(String(itemToEdit.amount || preview.amount || ''));
+      setConsumableNotes(itemToEdit.notes || preview.notes || '');
+      setConsumableStatus(itemToEdit.status || 'In Stock');
+      setAddMode('store-consumable');
+      setShowAddModal(true);
+      return;
+    }
+
+    setEditingConsumableId(null);
+
     if (isAnyConsumables) {
       setAddMode('store-consumable');
       let targetEntity = 'PETC';
@@ -1139,12 +1168,17 @@ export default function App() {
       } else if (navSub.includes('petc') || navSub.includes('office') || isPetcEmployee) {
         targetEntity = 'PETC';
       }
+      const existingCount = items.filter(i => (i.category === 'Consumables' || i.categoryId === 'consumables')).length;
       setConsumableEntity(targetEntity);
+      setConsumableItemNo(String(existingCount + 1));
+      setConsumableDate(new Date().toISOString().split('T')[0]);
       setConsumableName('');
+      setConsumableSupplier('');
+      setConsumableOrSiNo('');
       setConsumableQty('1');
       setConsumableUnit('pcs');
+      setConsumableUnitCost('');
       setConsumableAmount('');
-      setConsumableDate(new Date().toISOString().split('T')[0]);
       setConsumableNotes('');
       setConsumableStatus('In Stock');
       setShowAddModal(true);
@@ -1225,20 +1259,21 @@ export default function App() {
     setShowAddModal(false);
   };
 
-  // --- Store Consumables Handler (Knoah Mari & Red Goose) ---
+  // --- Consumables Handler (PETC, Knoah Mari & Red Goose) ---
   const handleSaveStoreConsumable = async () => {
     if (!consumableName || !consumableName.trim()) {
-      showNotice('Please enter an item name for the consumable.');
+      showNotice('Please enter particulars / item name for the consumable.');
       return;
     }
     setIsSavingConsumable(true);
     try {
-      const id = `CNS-${Date.now()}`;
+      const isEditing = Boolean(editingConsumableId);
+      const id = editingConsumableId || `CNS-${Date.now()}`;
       const itemName = consumableName.trim();
-      const numAmount = parseFloat(consumableAmount) || 0;
       const numQty = parseFloat(consumableQty) || 1;
+      const numUnitCost = parseFloat(consumableUnitCost) || 0;
+      const numAmount = parseFloat(consumableAmount) || (numQty * numUnitCost) || 0;
       const recordDate = consumableDate || new Date().toISOString().split('T')[0];
-      const isPetc = consumableEntity === 'PETC';
       const recordEntity = consumableEntity || (isPetcOfficeSupplies ? 'PETC' : isRedGooseEmployee ? 'Red Goose' : 'Knoah Mari');
       const subCategoryName = recordEntity === 'PETC' ? 'Office supplies' : 'Store Consumables';
       const subId = recordEntity === 'PETC'
@@ -1247,12 +1282,31 @@ export default function App() {
           ? 'red-goose-store-consumables'
           : 'knoah-mari-store-consumables';
 
+      const existingConsumables = items.filter(i => (i.category === 'Consumables' || i.categoryId === 'consumables'));
+      const itemNoVal = consumableItemNo || String(existingConsumables.length + (isEditing ? 0 : 1));
+
+      const previewData = {
+        itemNo: itemNoVal,
+        particulars: itemName,
+        supplier: consumableSupplier.trim(),
+        orSiNo: consumableOrSiNo.trim(),
+        date: recordDate,
+        quantity: numQty,
+        unitMeasure: consumableUnit || 'pcs',
+        unitCost: numUnitCost,
+        amount: numAmount,
+        establishment: recordEntity,
+        category: `Consumables > ${subCategoryName}`,
+        notes: consumableNotes.trim(),
+        status: consumableStatus || 'In Stock'
+      };
+
       const record = {
         id,
         table: 'consumables_receipts',
         file_name: `${itemName}.item`,
         title: itemName,
-        establishment: recordEntity,
+        establishment: consumableSupplier.trim() || recordEntity,
         receipt_date: recordDate,
         category: 'Consumables',
         category_id: 'consumables',
@@ -1267,34 +1321,36 @@ export default function App() {
         status: consumableStatus || 'In Stock',
         file_format: 'ITEM',
         file_size: '1 KB',
-        description: consumableNotes.trim() || `${recordEntity} ${subCategoryName}: ${itemName}`,
-        notes: consumableNotes.trim(),
-        preview_data: {
-          itemName,
-          quantity: numQty,
-          unit: consumableUnit || 'pcs',
-          amount: numAmount,
-          date: recordDate,
-          establishment: recordEntity,
-          category: `Consumables > ${subCategoryName}`,
-          notes: consumableNotes.trim()
-        }
+        description: `OR/SI: ${consumableOrSiNo.trim() || '-'} | Supplier: ${consumableSupplier.trim() || '-'} | ${itemName} (${numQty} ${consumableUnit || 'pcs'} @ ₱${numUnitCost})`,
+        notes: `Supplier: ${consumableSupplier.trim()} | OR/SI No: ${consumableOrSiNo.trim()}${consumableNotes.trim() ? ' | ' + consumableNotes.trim() : ''}`,
+        preview_data: previewData
       };
 
       if (isLaravelDriver()) {
-        await backend.createReceipt(record, 'consumables_receipts');
+        if (isEditing) {
+          await backend.updateReceipt(id, 'consumables_receipts', record);
+        } else {
+          await backend.createReceipt(record, 'consumables_receipts');
+        }
       }
 
       const mappedItem = mapFromDb(record, 'consumables_receipts');
+      mappedItem.previewData = previewData;
+      mappedItem.supplier = consumableSupplier.trim();
+      mappedItem.orSiNo = consumableOrSiNo.trim();
+      mappedItem.unitCost = numUnitCost;
+      mappedItem.itemNo = itemNoVal;
+
       setItems(prev => [mappedItem, ...prev.filter(i => i.id !== id)]);
       closeAddModal();
-      showNotice(`${recordEntity === 'PETC' ? 'Office supply' : 'Store consumable'} "${itemName}" saved successfully!`);
+      showNotice(`${recordEntity === 'PETC' ? 'Office supply' : 'Consumable'} "${itemName}" ${isEditing ? 'updated' : 'saved'} successfully!`);
       fetchData(true);
     } catch (err) {
-      console.error('Failed to save store consumable:', err);
-      showNotice(`Error saving store consumable: ${err.message || 'Server error'}`);
+      console.error('Failed to save consumable:', err);
+      showNotice(`Error saving consumable: ${err.message || 'Server error'}`);
     } finally {
       setIsSavingConsumable(false);
+      setEditingConsumableId(null);
     }
   };
 
@@ -2256,6 +2312,19 @@ export default function App() {
                   </View>
                 </View>
               )
+            ) : isAnyConsumables ? (
+              <ConsumablesTableView
+                filteredItems={filteredItems}
+                onViewItem={(item) => setViewItem(item)}
+                onEditItem={(item) => openAddModal(item)}
+                onDeleteItem={handleDeleteItem}
+                onAddConsumable={() => openAddModal()}
+                onExportExcel={() => exportFolderToExcel(activeNav)}
+                isAdmin={isAdmin}
+                isLight={isLight}
+                activeNav={activeNav}
+                styles={styles}
+              />
             ) : useCardsView ? (
               <DocumentCardsView
                 filteredItems={filteredItems}
@@ -2389,6 +2458,15 @@ export default function App() {
         setConsumableNotes={setConsumableNotes}
         consumableStatus={consumableStatus}
         setConsumableStatus={setConsumableStatus}
+        consumableSupplier={consumableSupplier}
+        setConsumableSupplier={setConsumableSupplier}
+        consumableOrSiNo={consumableOrSiNo}
+        setConsumableOrSiNo={setConsumableOrSiNo}
+        consumableUnitCost={consumableUnitCost}
+        setConsumableUnitCost={setConsumableUnitCost}
+        consumableItemNo={consumableItemNo}
+        setConsumableItemNo={setConsumableItemNo}
+        editingConsumableId={editingConsumableId}
         isSavingConsumable={isSavingConsumable}
         handleSaveStoreConsumable={handleSaveStoreConsumable}
         isLight={isLight}

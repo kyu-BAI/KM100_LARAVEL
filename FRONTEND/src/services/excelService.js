@@ -28,13 +28,21 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
       .filter(Boolean)
       .pop() || 'Inventory Records';
 
-    const reportTitle = cleanScope.toUpperCase() + ' - AUDIT REPORT';
+    const isConsumablesReport = cleanScope.toLowerCase().includes('consumable') || 
+                                cleanScope.toLowerCase().includes('office') || 
+                                folderItems.some(it => it.category === 'Consumables' || it.categoryId === 'consumables');
+
+    const reportTitle = cleanScope.toUpperCase() + (isConsumablesReport ? ' - CONSUMABLES INVENTORY REGISTER' : ' - AUDIT REPORT');
 
     // Calculate total sum
     const totalAmount = folderItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
     const totalFormatted = '₱' + totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     // 1. Prepare clean array of arrays (AOA)
+    const headerCols = isConsumablesReport
+      ? ['Item No.', 'Date', 'Particulars', 'Supplier', 'OR / SI No.', 'Qty', 'Unit Measure', 'Unit Cost (PHP)', 'Amount (PHP)', 'Branch', 'Status']
+      : ['No.', 'Document Title', 'Establishment / Store', 'Invoice / OR No.', 'Branch', 'Receipt Date', 'Date Recorded', 'Amount (PHP)', 'Status'];
+
     const aoa = [
       // Row 0: Company Header Banner
       ['KM100 SKILLS & TRAINING CENTER, INC.'],
@@ -44,33 +52,63 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
       [`EXPORT DATE: ${dateStr} • ${timeStr}     |     TOTAL RECORDS: ${folderItems.length}     |     TOTAL AMOUNT: ${totalFormatted}     |     STATUS: VERIFIED INVENTORY`],
       // Row 3: Spacer Row
       [],
-      // Row 4: Clean, Essential Table Column Headers (NO folder/category clutter)
-      ['No.', 'Document Title', 'Establishment / Store', 'Invoice / OR No.', 'Branch', 'Receipt Date', 'Date Recorded', 'Amount (PHP)', 'Status']
+      // Row 4: Clean, Essential Table Column Headers
+      headerCols
     ];
 
     // 2. Map and clean each item row
     folderItems.forEach((item, index) => {
       const num = index + 1;
-      const docTitle = item.title || item.fileName || '-';
-      const store = item.establishment || item.store || '-';
-      const invoiceOr = item.referenceNumber || item.orNumber || item.invoiceNumber || '-';
-      const branch = item.entity || item.subCategory || '-';
-      const receiptDate = item.receiptDate || (item.year ? `${item.year} ${item.month || ''}`.trim() : '-');
-      const recordedDate = item.scannedDate || item.createdAt || '-';
-      const amount = parseFloat(item.amount) || 0;
-      const status = item.status || 'Verified';
+      const preview = item.previewData || {};
 
-      aoa.push([
-        num,
-        docTitle,
-        store,
-        invoiceOr,
-        branch,
-        receiptDate,
-        recordedDate,
-        amount,
-        status
-      ]);
+      if (isConsumablesReport) {
+        const itemNumber = item.itemNo || preview.itemNo || num;
+        const dateVal = item.receiptDate || preview.date || item.scannedDate || item.createdAt || '-';
+        const particulars = item.title || preview.particulars || item.fileName?.replace(/\.item$/i, '') || '-';
+        const supplier = item.supplier || preview.supplier || (item.establishment && item.establishment !== item.entity ? item.establishment : '') || '-';
+        const orSiNo = item.orSiNo || preview.orSiNo || preview.or_si_no || '-';
+        const qty = parseFloat(item.quantity) || parseFloat(preview.quantity) || 1;
+        const unitMeasure = item.unit || preview.unitMeasure || 'pcs';
+        const amount = parseFloat(item.amount) || parseFloat(preview.amount) || 0;
+        const unitCost = parseFloat(item.unitCost) || parseFloat(preview.unitCost) || (qty > 0 && amount > 0 ? (amount / qty) : 0);
+        const branch = item.entity || '-';
+        const status = item.status || 'In Stock';
+
+        aoa.push([
+          itemNumber,
+          dateVal,
+          particulars,
+          supplier,
+          orSiNo,
+          qty,
+          unitMeasure,
+          unitCost,
+          amount,
+          branch,
+          status
+        ]);
+      } else {
+        const docTitle = item.title || item.fileName || '-';
+        const store = item.establishment || item.store || '-';
+        const invoiceOr = item.referenceNumber || item.orNumber || item.invoiceNumber || '-';
+        const branch = item.entity || item.subCategory || '-';
+        const receiptDate = item.receiptDate || (item.year ? `${item.year} ${item.month || ''}`.trim() : '-');
+        const recordedDate = item.scannedDate || item.createdAt || '-';
+        const amount = parseFloat(item.amount) || 0;
+        const status = item.status || 'Verified';
+
+        aoa.push([
+          num,
+          docTitle,
+          store,
+          invoiceOr,
+          branch,
+          receiptDate,
+          recordedDate,
+          amount,
+          status
+        ]);
+      }
     });
 
     const dataStartRow = 5; // Row index 5 is first item
