@@ -275,6 +275,17 @@ export default function App() {
   const [renameNewName, setRenameNewName] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
 
+  // Store Consumables Form State (for Knoah Mari and Red Goose store supplies)
+  const [consumableEntity, setConsumableEntity] = useState('Knoah Mari');
+  const [consumableName, setConsumableName] = useState('');
+  const [consumableQty, setConsumableQty] = useState('1');
+  const [consumableUnit, setConsumableUnit] = useState('pcs');
+  const [consumableAmount, setConsumableAmount] = useState('');
+  const [consumableDate, setConsumableDate] = useState(new Date().toISOString().split('T')[0]);
+  const [consumableNotes, setConsumableNotes] = useState('');
+  const [consumableStatus, setConsumableStatus] = useState('In Stock');
+  const [isSavingConsumable, setIsSavingConsumable] = useState(false);
+
 
 
   // Current logged in user (Admin or Employee)
@@ -785,6 +796,13 @@ export default function App() {
   const isConsumablesEmployee = isEmployee && (userDept.includes('consumable') || userDept.includes('supplies') || userDept.includes('office'));
   const isSalesIncomeEmployee = isEmployee && (userDept.includes('sales') || userDept.includes('income'));
 
+  const isKnoahUser = isKnoahEmployee || userDept.includes('knoah');
+  const isRedGooseUser = isRedGooseEmployee || userDept.includes('red');
+  const isStoreConsumables = activeNav?.type === 'consumables' && (
+    (activeNav?.subCategory && (activeNav.subCategory.toLowerCase().includes('knoah') || activeNav.subCategory.toLowerCase().includes('red'))) ||
+    (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
+  );
+
   // Filter items strictly based on the left sidebar navigation and employee branch scope
   const filteredItems = useMemo(() => {
     // If viewing All Inventory Files and the user has toggled off displaying all files
@@ -1086,7 +1104,6 @@ export default function App() {
 
   // Open & Close Add Document Modal
   const openAddModal = () => {
-    setAddMode('options');
     setInsertedFile(null);
     setCapturedReceiptPhoto(null);
     setScannedRefNo(`OR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
@@ -1103,12 +1120,31 @@ export default function App() {
     setOcrOrNumber('');
     stopCamera();
 
+    if (isStoreConsumables) {
+      setAddMode('store-consumable');
+      const targetEntity = (activeNav.subCategory?.toLowerCase().includes('red') || isRedGooseEmployee) ? 'Red Goose' : 'Knoah Mari';
+      setConsumableEntity(targetEntity);
+      setConsumableName('');
+      setConsumableQty('1');
+      setConsumableUnit('pcs');
+      setConsumableAmount('');
+      setConsumableDate(new Date().toISOString().split('T')[0]);
+      setConsumableNotes('');
+      setConsumableStatus('In Stock');
+      setShowAddModal(true);
+      return;
+    }
+
+    setAddMode('options');
+
+    // Auto-select receipt classification based on current active navigation context
     if (isKnoahEmployee) {
       const match = RECEIPT_TYPES.find(r => r.id === 'expenses-knoah-mari');
-      if (match) { setSelectedReceiptType(match); return; }
-    }
-    // Auto-select receipt classification based on current active navigation context
-    if (activeNav.type === 'petc-sales') {
+      if (match) setSelectedReceiptType(match);
+    } else if (isRedGooseEmployee) {
+      const match = RECEIPT_TYPES.find(r => r.id === 'expenses-red-goose');
+      if (match) setSelectedReceiptType(match);
+    } else if (activeNav.type === 'petc-sales') {
       const match = RECEIPT_TYPES.find(r => r.id === 'petc-sales');
       if (match) setSelectedReceiptType(match);
     } else if (activeNav.type === 'petc-income') {
@@ -1147,6 +1183,73 @@ export default function App() {
   const closeAddModal = () => {
     stopCamera();
     setShowAddModal(false);
+  };
+
+  // --- Store Consumables Handler (Knoah Mari & Red Goose) ---
+  const handleSaveStoreConsumable = async () => {
+    if (!consumableName || !consumableName.trim()) {
+      showNotice('Please enter an item name for the consumable.');
+      return;
+    }
+    setIsSavingConsumable(true);
+    try {
+      const id = `CNS-${Date.now()}`;
+      const itemName = consumableName.trim();
+      const numAmount = parseFloat(consumableAmount) || 0;
+      const numQty = parseFloat(consumableQty) || 1;
+      const recordDate = consumableDate || new Date().toISOString().split('T')[0];
+      const recordEntity = consumableEntity || (isRedGooseEmployee ? 'Red Goose' : 'Knoah Mari');
+      const subId = recordEntity.toLowerCase().includes('red') ? 'red-goose-store-consumables' : 'knoah-mari-store-consumables';
+
+      const record = {
+        id,
+        table: 'consumables_receipts',
+        file_name: `${itemName}.item`,
+        title: itemName,
+        establishment: recordEntity,
+        receipt_date: recordDate,
+        category: 'Consumables',
+        category_id: 'consumables',
+        sub_category: 'Store Consumables',
+        sub_category_id: subId,
+        entity: recordEntity,
+        year: recordDate.split('-')[0] || String(new Date().getFullYear()),
+        month: new Date(recordDate).toLocaleString('default', { month: 'short' }).toUpperCase(),
+        amount: numAmount,
+        quantity: numQty,
+        unit: consumableUnit || 'pcs',
+        status: consumableStatus || 'In Stock',
+        file_format: 'ITEM',
+        file_size: '1 KB',
+        description: consumableNotes.trim() || `${recordEntity} Store Consumables: ${itemName}`,
+        notes: consumableNotes.trim(),
+        preview_data: {
+          itemName,
+          quantity: numQty,
+          unit: consumableUnit || 'pcs',
+          amount: numAmount,
+          date: recordDate,
+          establishment: recordEntity,
+          category: 'Consumables > Store Consumables',
+          notes: consumableNotes.trim()
+        }
+      };
+
+      if (isLaravelDriver()) {
+        await backend.createReceipt(record, 'consumables_receipts');
+      }
+
+      const mappedItem = mapFromDb(record, 'consumables_receipts');
+      setItems(prev => [mappedItem, ...prev.filter(i => i.id !== id)]);
+      closeAddModal();
+      showNotice(`Store consumable "${itemName}" saved successfully!`);
+      fetchData(true);
+    } catch (err) {
+      console.error('Failed to save store consumable:', err);
+      showNotice(`Error saving store consumable: ${err.message || 'Server error'}`);
+    } finally {
+      setIsSavingConsumable(false);
+    }
   };
 
   // --- Option 1: Insert Document Handlers ---
@@ -2042,16 +2145,28 @@ export default function App() {
                 </View>
               ) : (
                 <View style={styles.emptyContainer}>
-                  <Layers size={44} color={isLight ? '#cbd5e1' : '#334155'} />
+                  {isStoreConsumables ? (
+                    <Package size={44} color="#f47721" />
+                  ) : (
+                    <Layers size={44} color={isLight ? '#cbd5e1' : '#334155'} />
+                  )}
                   <Text style={[styles.emptyTitle, isLight && styles.emptyTitleLight]}>
-                    {searchQuery ? 'No documents match your search' : items.length === 0 ? 'No files or documents currently in system' : `No records found in ${activeNav.label}`}
+                    {searchQuery
+                      ? 'No items match your search'
+                      : isStoreConsumables
+                        ? `No store consumables recorded in ${activeNav.label?.replace('Consumables > ', '') || 'Store'}`
+                        : items.length === 0
+                          ? 'No files or documents currently in system'
+                          : `No records found in ${activeNav.label}`}
                   </Text>
                   <Text style={[styles.emptySubtitle, isLight && styles.emptySubtitleLight]}>
                     {searchQuery
-                      ? 'Try searching with a different store name, invoice number, or amount.'
-                      : items.length === 0
-                        ? 'Your inventory database is currently empty. Tap "Scan Receipt" to add your first record.'
-                        : 'You can tap "Scan Receipt" to add a new document, or choose another category from the tabs above.'}
+                      ? 'Try searching with a different item name or keyword.'
+                      : isStoreConsumables
+                        ? 'There are currently no store consumables recorded for this establishment. Tap "Add Consumable" to record your first consumable item.'
+                        : items.length === 0
+                          ? 'Your inventory database is currently empty. Tap "Scan Receipt" to add your first record.'
+                          : 'You can tap "Scan Receipt" to add a new document, or choose another category from the tabs above.'}
                   </Text>
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {searchQuery ? (
@@ -2067,8 +2182,14 @@ export default function App() {
                       style={styles.heroScanBtn}
                       onPress={openAddModal}
                     >
-                      <Camera size={15} color="#ffffff" />
-                      <Text style={styles.heroScanBtnText}>Scan New Receipt</Text>
+                      {isStoreConsumables ? (
+                        <Package size={15} color="#ffffff" />
+                      ) : (
+                        <Camera size={15} color="#ffffff" />
+                      )}
+                      <Text style={styles.heroScanBtnText}>
+                        {isStoreConsumables ? 'Add Store Consumable' : 'Scan New Receipt'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -2084,6 +2205,7 @@ export default function App() {
                 onDeleteItem={handleDeleteItem}
                 isAdmin={isAdmin}
                 isLight={isLight}
+                activeNav={activeNav}
                 styles={styles}
               />
             ) : (
@@ -2097,6 +2219,7 @@ export default function App() {
                 onDeleteItem={handleDeleteItem}
                 isAdmin={isAdmin}
                 isLight={isLight}
+                activeNav={activeNav}
                 styles={styles}
               />
             )}
@@ -2188,6 +2311,24 @@ export default function App() {
         currentUser={currentUser}
         activeNav={activeNav}
         handleProcessReceiptPhoto={handleProcessReceiptPhoto}
+        consumableEntity={consumableEntity}
+        setConsumableEntity={setConsumableEntity}
+        consumableName={consumableName}
+        setConsumableName={setConsumableName}
+        consumableQty={consumableQty}
+        setConsumableQty={setConsumableQty}
+        consumableUnit={consumableUnit}
+        setConsumableUnit={setConsumableUnit}
+        consumableAmount={consumableAmount}
+        setConsumableAmount={setConsumableAmount}
+        consumableDate={consumableDate}
+        setConsumableDate={setConsumableDate}
+        consumableNotes={consumableNotes}
+        setConsumableNotes={setConsumableNotes}
+        consumableStatus={consumableStatus}
+        setConsumableStatus={setConsumableStatus}
+        isSavingConsumable={isSavingConsumable}
+        handleSaveStoreConsumable={handleSaveStoreConsumable}
         isLight={isLight}
         isMobile={isMobile}
         styles={styles}
@@ -2211,19 +2352,23 @@ export default function App() {
         styles={styles}
       />
 
-
-
-      {/* MOBILE FLOATING ACTION BUTTON (SCAN RECEIPT) */}
+      {/* MOBILE FLOATING ACTION BUTTON */}
       {isMobile && (
         <View style={styles.mobileFloatingBar}>
           <TouchableOpacity
             style={styles.mobileFloatingBtn}
             onPress={openAddModal}
             activeOpacity={0.85}
-            title="Scan receipt with camera"
+            title={isStoreConsumables ? "Add store consumable" : "Scan receipt with camera"}
           >
-            <Camera size={20} color="#ffffff" />
-            <Text style={styles.mobileFloatingBtnText}>Scan Receipt</Text>
+            {isStoreConsumables ? (
+              <Package size={20} color="#ffffff" />
+            ) : (
+              <Camera size={20} color="#ffffff" />
+            )}
+            <Text style={styles.mobileFloatingBtnText}>
+              {isStoreConsumables ? 'Add Consumable' : 'Scan Receipt'}
+            </Text>
           </TouchableOpacity>
         </View>
       )}

@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   UploadCloud,
   Camera,
+  Package,
   ArrowLeft,
   Check,
   RefreshCw,
@@ -92,12 +93,36 @@ export default function AddDocumentModal({
   currentUser,
   activeNav,
   handleProcessReceiptPhoto,
+  consumableEntity,
+  setConsumableEntity,
+  consumableName,
+  setConsumableName,
+  consumableQty,
+  setConsumableQty,
+  consumableUnit,
+  setConsumableUnit,
+  consumableAmount,
+  setConsumableAmount,
+  consumableDate,
+  setConsumableDate,
+  consumableNotes,
+  setConsumableNotes,
+  consumableStatus,
+  setConsumableStatus,
+  isSavingConsumable,
+  handleSaveStoreConsumable,
   isLight,
   isMobile,
   styles
 }) {
   const userDept = (currentUser?.department || currentUser?.assignedBranch || '').toLowerCase();
   const hasAllBranchesScope = userDept.includes('all');
+  const isKnoahUser = isKnoahEmployee || userDept.includes('knoah');
+  const isRedGooseUser = isRedGooseEmployee || userDept.includes('red');
+  const isStoreConsumables = activeNav?.type === 'consumables' && (
+    (activeNav?.subCategory && (activeNav.subCategory.toLowerCase().includes('knoah') || activeNav.subCategory.toLowerCase().includes('red'))) ||
+    (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
+  );
   const [previewZoomed, setPreviewZoomed] = useState(false);
   const [isRotatingPhoto, setIsRotatingPhoto] = useState(false);
   const [isLineItemsExpanded, setIsLineItemsExpanded] = useState(true);
@@ -199,11 +224,13 @@ export default function AddDocumentModal({
                   {addMode === 'options' && 'Add Document'}
                   {addMode === 'insert' && 'Insert Document from Device'}
                   {addMode === 'scan' && 'Scan Receipt Document'}
+                  {addMode === 'store-consumable' && 'Add Store Consumable'}
                 </Text>
                 <Text style={[styles.modalHeaderSub, isMobile && { fontSize: 11 }, isLight && styles.viewerSubtitleLight]} numberOfLines={1}>
-                  {addMode === 'options' && 'Choose one of the two options below to add records'}
+                  {addMode === 'options' && (isStoreConsumables ? 'Choose an option to add consumable supplies' : 'Choose one of the two options below to add records')}
                   {addMode === 'insert' && `Target Category: ${activeNav?.label || 'General'}`}
                   {addMode === 'scan' && 'Choose receipt type and capture with camera'}
+                  {addMode === 'store-consumable' && `Record store consumable inventory for ${consumableEntity || 'Store'}`}
                 </Text>
               </View>
             </View>
@@ -244,27 +271,50 @@ export default function AddDocumentModal({
                 </View>
               </TouchableOpacity>
 
-              {/* Option 2: Scan Document */}
-              <TouchableOpacity
-                style={[styles.optionCard, styles.optionCardScan, isMobile && styles.optionCardMobile, isLight && styles.optionCardLight]}
-                onPress={() => setAddMode('scan')}
-              >
-                <View style={styles.optionCardTopRow}>
-                  <View style={[styles.optionIconBox, styles.optionIconBoxScan]}>
-                    <Camera size={24} color="#34d399" />
+              {/* Option 2: Add Store Consumable (for Knoah / Red Goose) OR Scan Document (for others) */}
+              {isStoreConsumables ? (
+                <TouchableOpacity
+                  style={[styles.optionCard, styles.optionCardScan, isMobile && styles.optionCardMobile, isLight && styles.optionCardLight]}
+                  onPress={() => setAddMode('store-consumable')}
+                >
+                  <View style={styles.optionCardTopRow}>
+                    <View style={[styles.optionIconBox, { backgroundColor: 'rgba(244, 119, 33, 0.15)' }]}>
+                      <Package size={24} color="#f47721" />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[styles.optionTitle, isLight && styles.optionTitleLight]}>Add Store Consumable</Text>
+                      <Text style={[styles.optionSubtitle, { color: '#f47721' }]}>Record store supplies & items</Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[styles.optionTitle, isLight && styles.optionTitleLight]}>Scan Document</Text>
-                    <Text style={[styles.optionSubtitle, { color: '#34d399' }]}>Camera receipt scanner</Text>
+                  <Text style={[styles.optionDescription, isLight && styles.optionDescriptionLight]}>
+                    Add store consumables, packaging, cups, cleaning materials, and supplies for {activeNav?.label?.replace('Consumables > ', '') || 'Store'}.
+                  </Text>
+                  <View style={[styles.optionActionBadge, { backgroundColor: '#f47721' }, isMobile && { width: '100%', alignItems: 'center' }]}>
+                    <Text style={[styles.optionActionText, { color: '#ffffff' }]}>Add Consumable →</Text>
                   </View>
-                </View>
-                <Text style={[styles.optionDescription, isLight && styles.optionDescriptionLight]}>
-                  Capture physical receipts or vouchers (Emission Sales, CTPL Insurance, Expenses, Consumables) via camera with real-time OCR extraction.
-                </Text>
-                <View style={[styles.optionActionBadge, styles.optionActionBadgeScan, isMobile && { width: '100%', alignItems: 'center' }]}>
-                  <Text style={[styles.optionActionText, { color: '#34d399' }]}>Scan Receipt →</Text>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.optionCard, styles.optionCardScan, isMobile && styles.optionCardMobile, isLight && styles.optionCardLight]}
+                  onPress={() => setAddMode('scan')}
+                >
+                  <View style={styles.optionCardTopRow}>
+                    <View style={[styles.optionIconBox, styles.optionIconBoxScan]}>
+                      <Camera size={24} color="#34d399" />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[styles.optionTitle, isLight && styles.optionTitleLight]}>Scan Document</Text>
+                      <Text style={[styles.optionSubtitle, { color: '#34d399' }]}>Camera receipt scanner</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.optionDescription, isLight && styles.optionDescriptionLight]}>
+                    Capture physical receipts or vouchers (Emission Sales, CTPL Insurance, Expenses, Consumables) via camera with real-time OCR extraction.
+                  </Text>
+                  <View style={[styles.optionActionBadge, styles.optionActionBadgeScan, isMobile && { width: '100%', alignItems: 'center' }]}>
+                    <Text style={[styles.optionActionText, { color: '#34d399' }]}>Scan Receipt →</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           )}
 
@@ -358,6 +408,240 @@ export default function AddDocumentModal({
           )}
 
           {/* ---------------------------------------------------- */}
+          {/* STAGE: ADD STORE CONSUMABLE (Knoah Mari & Red Goose) */}
+          {/* ---------------------------------------------------- */}
+          {addMode === 'store-consumable' && (
+            <>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                {/* 1. Establishment Selector */}
+                <Text style={[styles.inputLabel, { marginBottom: 6 }, isLight && styles.inputLabelLight]}>
+                  ESTABLISHMENT / STORE *
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                  {['Knoah Mari', 'Red Goose'].map(store => {
+                    const isSelected = consumableEntity === store;
+                    const isDisabled = (isKnoahEmployee && store !== 'Knoah Mari') || (isRedGooseEmployee && store !== 'Red Goose');
+                    return (
+                      <TouchableOpacity
+                        key={store}
+                        disabled={isDisabled}
+                        onPress={() => setConsumableEntity(store)}
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          borderRadius: 8,
+                          borderWidth: 1.5,
+                          borderColor: isSelected ? '#f47721' : (isLight ? '#e2e8f0' : '#334155'),
+                          backgroundColor: isSelected ? (isLight ? '#fff7ed' : 'rgba(244, 119, 33, 0.15)') : (isLight ? '#ffffff' : '#1e293b'),
+                          opacity: isDisabled ? 0.4 : 1,
+                          cursor: isDisabled ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <Building2 size={16} color={isSelected ? '#f47721' : '#94a3b8'} />
+                        <Text style={{
+                          fontWeight: isSelected ? '700' : '500',
+                          fontSize: 13,
+                          color: isSelected ? '#f47721' : (isLight ? '#334155' : '#cbd5e1')
+                        }}>
+                          {store}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* 2. Category classification banner */}
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: 10,
+                  borderRadius: 6,
+                  backgroundColor: isLight ? '#f1f5f9' : '#0f172a',
+                  marginBottom: 16
+                }}>
+                  <Package size={16} color="#fbbf24" />
+                  <Text style={{ fontSize: 12, color: isLight ? '#475569' : '#94a3b8' }}>
+                    Classification: <Text style={{ fontWeight: '700', color: isLight ? '#1e293b' : '#f8fafc' }}>Consumables &gt; Store Consumables</Text>
+                  </Text>
+                </View>
+
+                {/* 3. Item Name */}
+                <View style={{ marginBottom: 14 }}>
+                  <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                    ITEM / CONSUMABLE NAME *
+                  </Text>
+                  <TextInput
+                    style={[styles.input, isLight && styles.inputLight]}
+                    placeholder="e.g. Paper Bags, Takeout Cups, Kitchen Towels, Straws"
+                    placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                    value={consumableName}
+                    onChangeText={setConsumableName}
+                  />
+                </View>
+
+                {/* 4. Quantity & Unit Row */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      QUANTITY *
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="1"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      keyboardType="numeric"
+                      value={consumableQty}
+                      onChangeText={setConsumableQty}
+                    />
+                  </View>
+                  <View style={{ flex: 1.2 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      UNIT *
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {['pcs', 'packs', 'boxes', 'rolls', 'bottles', 'kg'].map(u => (
+                        <TouchableOpacity
+                          key={u}
+                          onPress={() => setConsumableUnit(u)}
+                          style={{
+                            paddingHorizontal: 8,
+                            paddingVertical: 5,
+                            borderRadius: 4,
+                            borderWidth: 1,
+                            borderColor: consumableUnit === u ? '#f47721' : (isLight ? '#cbd5e1' : '#334155'),
+                            backgroundColor: consumableUnit === u ? '#f47721' : 'transparent'
+                          }}
+                        >
+                          <Text style={{
+                            fontSize: 11,
+                            fontWeight: '600',
+                            color: consumableUnit === u ? '#ffffff' : (isLight ? '#475569' : '#94a3b8')
+                          }}>
+                            {u}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+
+                {/* 5. Total Value & Date Row */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      TOTAL VALUE / COST (PHP)
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="0.00"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      keyboardType="numeric"
+                      value={consumableAmount}
+                      onChangeText={setConsumableAmount}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                      DATE RECORDED *
+                    </Text>
+                    <TextInput
+                      style={[styles.input, isLight && styles.inputLight]}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                      value={consumableDate}
+                      onChangeText={setConsumableDate}
+                    />
+                  </View>
+                </View>
+
+                {/* 6. Stock Status */}
+                <View style={{ marginBottom: 14 }}>
+                  <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                    INVENTORY STATUS
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {['In Stock', 'Low Stock', 'Out of Stock'].map(st => {
+                      const isSel = consumableStatus === st;
+                      const dotColor = st === 'In Stock' ? '#10b981' : st === 'Low Stock' ? '#f59e0b' : '#ef4444';
+                      return (
+                        <TouchableOpacity
+                          key={st}
+                          onPress={() => setConsumableStatus(st)}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 6,
+                            paddingHorizontal: 10,
+                            paddingVertical: 6,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: isSel ? dotColor : (isLight ? '#cbd5e1' : '#334155'),
+                            backgroundColor: isSel ? (isLight ? '#f8fafc' : '#1e293b') : 'transparent'
+                          }}
+                        >
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
+                          <Text style={{
+                            fontSize: 12,
+                            fontWeight: isSel ? '700' : '400',
+                            color: isLight ? '#334155' : '#cbd5e1'
+                          }}>
+                            {st}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* 7. Notes & Description */}
+                <View style={{ marginBottom: 14 }}>
+                  <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
+                    SUPPLIER / STORAGE NOTES (OPTIONAL)
+                  </Text>
+                  <TextInput
+                    style={[styles.input, { minHeight: 60, textAlignVertical: 'top' }, isLight && styles.inputLight]}
+                    placeholder="e.g. Delivered by ABC Packaging; Stored in pantry shelf 2"
+                    placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                    multiline
+                    value={consumableNotes}
+                    onChangeText={setConsumableNotes}
+                  />
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.btnSecondary}
+                  onPress={closeAddModal}
+                >
+                  <Text style={styles.btnSecondaryText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.btnPrimary, (!consumableName?.trim() || isSavingConsumable) && { opacity: 0.6 }]}
+                  disabled={!consumableName?.trim() || isSavingConsumable}
+                  onPress={handleSaveStoreConsumable}
+                >
+                  {isSavingConsumable ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Package size={16} color="#fff" />
+                      <Text style={styles.btnPrimaryText}>Add Store Consumable</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+          {/* ---------------------------------------------------- */}
           {/* STAGE 3: SCAN DOCUMENT / RECEIPT                     */}
           {/* ---------------------------------------------------- */}
           {addMode === 'scan' && (
@@ -369,6 +653,7 @@ export default function AddDocumentModal({
                 </Text>
                 <View style={styles.receiptTypeGrid}>
                   {RECEIPT_TYPES.filter(rt => {
+                    if (rt.id === 'consumables-knoah-mari-store' || rt.id === 'consumables-red-goose-store') return false;
                     if (isAdmin || hasAllBranchesScope) return true;
                     if (isKnoahEmployee) return rt.entity === 'Knoah Mari' || rt.id.includes('knoah');
                     if (isRedGooseEmployee) return rt.entity === 'Red Goose' || rt.id.includes('red');

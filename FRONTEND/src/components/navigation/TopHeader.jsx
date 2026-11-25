@@ -8,6 +8,7 @@ import {
   Search,
   X,
   Camera,
+  Package,
   FileSpreadsheet,
   RefreshCw
 } from 'lucide-react';
@@ -36,6 +37,14 @@ export default function TopHeader({
   styles
 }) {
   // GLOBAL PROFESSIONAL TOP HEADER BAR
+  const userBranch = (currentUser?.assignedBranch || currentUser?.branch || '').toLowerCase();
+  const isKnoahUser = isEmployee && userBranch.includes('knoah');
+  const isRedGooseUser = isEmployee && userBranch.includes('red');
+  const isStoreConsumables = activeNav?.type === 'consumables' && (
+    (activeNav?.subCategory && (activeNav.subCategory.toLowerCase().includes('knoah') || activeNav.subCategory.toLowerCase().includes('red'))) ||
+    (!activeNav?.subCategory && (isKnoahUser || isRedGooseUser))
+  );
+
   return (
     <View
       accessibilityRole="banner"
@@ -96,7 +105,7 @@ export default function TopHeader({
               <Text
                 style={[styles.brandSub, isLight && styles.brandSubLight, isMobile && { fontSize: 11 }]}
                 numberOfLines={1}
-              >Receipt Management System
+              >Document Management System
               </Text>
           </View>
         </View>
@@ -132,17 +141,21 @@ export default function TopHeader({
 
       {/* Right Header Action Cluster */}
       <View style={[styles.topHeaderRight, isSmallMobile && { gap: 5 }]}>
-        {/* PRIMARY HERO BUTTON: SCAN RECEIPT */}
+        {/* PRIMARY HERO BUTTON: SCAN RECEIPT OR ADD STORE CONSUMABLE */}
         <TouchableOpacity
           style={[styles.heroScanBtn, isSmallMobile && { paddingHorizontal: 9, paddingVertical: 7, gap: 5 }]}
           onPress={openAddModal}
-          title="Scan physical receipt or upload document"
+          title={isStoreConsumables ? "Add store consumable item" : "Scan physical receipt or upload document"}
           accessibilityRole="button"
-          accessibilityLabel="Scan receipt or upload document"
+          accessibilityLabel={isStoreConsumables ? "Add store consumable item" : "Scan receipt or upload document"}
         >
-          <Camera size={isSmallMobile ? 14 : 16} color="#ffffff" />
+          {isStoreConsumables ? (
+            <Package size={isSmallMobile ? 14 : 16} color="#ffffff" />
+          ) : (
+            <Camera size={isSmallMobile ? 14 : 16} color="#ffffff" />
+          )}
           <Text style={[styles.heroScanBtnText, isSmallMobile && { fontSize: 11 }]}>
-            {width < 440 ? 'Scan' : 'Scan Receipt'}
+            {isStoreConsumables ? (width < 440 ? 'Add' : 'Add Consumable') : (width < 440 ? 'Scan' : 'Scan Receipt')}
           </Text>
         </TouchableOpacity>
 

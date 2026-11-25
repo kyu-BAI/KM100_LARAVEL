@@ -3,6 +3,7 @@ import { View, Text, Modal, TouchableOpacity, ScrollView, Image } from 'react-na
 import {
   FileSpreadsheet,
   FileText,
+  Package,
   Printer,
   Download,
   Edit3,
@@ -80,6 +81,10 @@ export default function DocumentViewerModal({
     link.click();
     document.body.removeChild(link);
   };
+
+  const isConsumable = viewItem?.category === 'Consumables' || viewItem?.subCategory?.includes('Store Consumables');
+  const displayTitle = isConsumable ? (viewItem?.title || viewItem?.fileName?.replace(/\.item$/i, '')) : viewItem?.fileName;
+
   return (
     <Modal visible={!!viewItem} transparent animationType="fade">
         <View style={[styles.modalOverlay, isMobile && styles.modalOverlayMobile]}>
@@ -98,14 +103,16 @@ export default function DocumentViewerModal({
             <View style={[styles.viewerHeader, isMobile && styles.modalHeaderMobile, isLight && styles.modalHeaderLight]}>
               <View style={[styles.viewerHeaderLeft, isMobile && { gap: 10, flex: 1, minWidth: 0 }]}>
                 <View style={[styles.viewerBadge, isMobile && { width: 38, height: 38 }]}>
-                  {viewItem?.fileFormat === 'XLSX' ? (
+                  {isConsumable ? (
+                    <Package size={isMobile ? 20 : 26} color="#fbbf24" />
+                  ) : viewItem?.fileFormat === 'XLSX' ? (
                     <FileSpreadsheet size={isMobile ? 20 : 26} color="#34d399" />
                   ) : (
                     <FileText size={isMobile ? 20 : 26} color={isLight ? '#f47721' : '#f47721'} />
                   )}
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[styles.viewerTitle, isMobile && { fontSize: 14 }, isLight && styles.viewerTitleLight]} numberOfLines={1}>{viewItem?.fileName}</Text>
+                  <Text style={[styles.viewerTitle, isMobile && { fontSize: 14 }, isLight && styles.viewerTitleLight]} numberOfLines={1}>{displayTitle}</Text>
                   <Text style={[styles.viewerSubtitle, isMobile && { fontSize: 10 }, isLight && styles.viewerSubtitleLight]} numberOfLines={1}>
                     {viewItem?.category} • {viewItem?.subCategory} • Entity: {viewItem?.entity}
                   </Text>
@@ -187,25 +194,27 @@ export default function DocumentViewerModal({
                 <View style={styles.viewerStatBox}>
                   <Text style={styles.viewerStatLabel}>ESTABLISHMENT</Text>
                   <Text style={[styles.viewerStatValue, { color: '#f47721' }]} numberOfLines={1}>
-                    {viewItem?.establishment || viewItem?.previewData?.establishment || 'General'}
+                    {viewItem?.entity || viewItem?.establishment || viewItem?.previewData?.establishment || 'General'}
                   </Text>
                 </View>
                 <View style={styles.viewerStatBox}>
-                  <Text style={styles.viewerStatLabel}>DATE SCANNED</Text>
+                  <Text style={styles.viewerStatLabel}>{isConsumable ? 'DATE RECORDED' : 'DATE SCANNED'}</Text>
                   <Text style={styles.viewerStatValue}>
-                    {viewItem?.scannedDate || viewItem?.createdAt || '-'}
+                    {viewItem?.receiptDate || viewItem?.scannedDate || viewItem?.createdAt || '-'}
                   </Text>
                 </View>
                 <View style={styles.viewerStatBox}>
-                  <Text style={styles.viewerStatLabel}>RECEIPT DATE (ISSUED)</Text>
+                  <Text style={styles.viewerStatLabel}>{isConsumable ? 'QUANTITY & UNIT' : 'RECEIPT DATE (ISSUED)'}</Text>
                   <Text style={styles.viewerStatValue}>
-                    {viewItem?.receiptDate || viewItem?.previewData?.receipt_date || '-'}
+                    {isConsumable
+                      ? `${viewItem?.quantity || 1} ${viewItem?.unit || 'pcs'}`
+                      : (viewItem?.receiptDate || viewItem?.previewData?.receipt_date || '-')}
                   </Text>
                 </View>
                 <View style={styles.viewerStatBox}>
-                  <Text style={styles.viewerStatLabel}>TOTAL AMOUNT</Text>
+                  <Text style={styles.viewerStatLabel}>{isConsumable ? 'TOTAL VALUE' : 'TOTAL AMOUNT'}</Text>
                   <Text style={[styles.viewerStatValue, { color: '#34d399' }]}>
-                    {viewItem?.amount ? `₱${Number(viewItem.amount).toLocaleString()}` : 'N/A'}
+                    {viewItem?.amount ? `₱${parseFloat(viewItem.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₱0.00'}
                   </Text>
                 </View>
                 <View style={styles.viewerStatBox}>
@@ -215,18 +224,65 @@ export default function DocumentViewerModal({
                   </Text>
                 </View>
                 <View style={styles.viewerStatBox}>
-                  <Text style={styles.viewerStatLabel}>AUDIT STATUS</Text>
+                  <Text style={styles.viewerStatLabel}>{isConsumable ? 'INVENTORY STATUS' : 'AUDIT STATUS'}</Text>
                   <Text style={[styles.viewerStatValue, { color: '#34d399' }]}>
-                    {viewItem?.status || 'Active'}
+                    {viewItem?.status || (isConsumable ? 'In Stock' : 'Active')}
                   </Text>
                 </View>
                 <View style={styles.viewerStatBox}>
-                  <Text style={styles.viewerStatLabel}>FILE TYPE</Text>
+                  <Text style={styles.viewerStatLabel}>CLASSIFICATION</Text>
                   <Text style={styles.viewerStatValue}>
-                    {viewItem?.fileFormat} ({viewItem?.fileSize})
+                    {isConsumable ? 'Store Consumable' : `${viewItem?.fileFormat} (${viewItem?.fileSize})`}
                   </Text>
                 </View>
               </View>
+
+              {/* Store Consumable Details Card */}
+              {isConsumable && (
+                <View style={styles.viewerSection}>
+                  <View style={styles.previewHeaderRow}>
+                    <Text style={styles.viewerSectionTitle}>STORE CONSUMABLE DETAILS</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981' }} />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#10b981' }}>
+                        {viewItem?.status || 'In Stock'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[styles.notesBox, { backgroundColor: isLight ? '#ffffff' : '#1e293b', borderColor: isLight ? '#e2e8f0' : '#334155', padding: 14 }]}>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: isLight ? '#0f172a' : '#f8fafc', marginBottom: 6 }}>
+                      {displayTitle}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: isLight ? '#475569' : '#94a3b8', marginBottom: 12 }}>
+                      {viewItem?.description || 'Store consumable supplies and materials inventory item.'}
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+                      <View style={{ minWidth: 120 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>ESTABLISHMENT</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#f47721' }}>{viewItem?.entity}</Text>
+                      </View>
+                      <View style={{ minWidth: 100 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>INVENTORY COUNT</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: isLight ? '#0f172a' : '#f8fafc' }}>
+                          {viewItem?.quantity || 1} {viewItem?.unit || 'pcs'}
+                        </Text>
+                      </View>
+                      <View style={{ minWidth: 120 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>TOTAL VALUE</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#10b981' }}>
+                          {viewItem?.amount ? `₱${parseFloat(viewItem.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₱0.00'}
+                        </Text>
+                      </View>
+                      <View style={{ minWidth: 110 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8' }}>DATE RECORDED</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: isLight ? '#0f172a' : '#f8fafc' }}>
+                          {viewItem?.receiptDate || viewItem?.scannedDate || viewItem?.createdAt || '-'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
 
               {viewItem?.notes && (
                 <View style={styles.viewerSection}>
@@ -238,7 +294,7 @@ export default function DocumentViewerModal({
               )}
 
               {/* Scanned Physical Receipt Image Attachment */}
-              {receiptImageUri && (
+              {receiptImageUri && !isConsumable && (
                 <View style={styles.viewerSection}>
                   <View style={styles.previewHeaderRow}>
                     <Text style={styles.viewerSectionTitle}>SCANNED PHYSICAL DOCUMENT PHOTO</Text>
@@ -364,7 +420,7 @@ export default function DocumentViewerModal({
               )}
 
               {/* ITEMIZED RECEIPT BREAKDOWN DROPDOWN ACCORDION */}
-              {(() => {
+              {!isConsumable && (() => {
                 const lineItems = viewItem?.lineItems || viewItem?.previewData?.lineItems || [];
                 if (!lineItems || lineItems.length === 0) return null;
                 return (
@@ -500,7 +556,7 @@ export default function DocumentViewerModal({
                 );
               })()}
 
-              {viewItem?.previewData && (
+              {!isConsumable && viewItem?.previewData && (
                 <View style={styles.viewerSection}>
                   <View style={styles.previewHeaderRow}>
                     <Text style={styles.viewerSectionTitle}>EMBEDDED DOCUMENT CONTENT PREVIEW</Text>
