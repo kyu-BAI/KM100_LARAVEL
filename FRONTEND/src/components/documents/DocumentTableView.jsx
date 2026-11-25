@@ -224,7 +224,9 @@ export default function DocumentTableView({
             </Text>
           </TouchableOpacity>
 
-          {groupedSections.map(({ category, items }) => {
+          {groupedSections
+            .filter(({ category }) => category !== 'PETC Insurance')
+            .map(({ category, items }) => {
             const meta = CATEGORY_META[category] || { color: '#64748b', bgLight: '#f1f5f9', bgDark: '#1e293b', borderLight: '#cbd5e1', borderDark: '#334155', Icon: Layers };
             const isSelected = selectedTypeFilter === category;
             const IconComp = meta.Icon;
