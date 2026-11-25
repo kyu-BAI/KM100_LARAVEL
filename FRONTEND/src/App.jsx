@@ -661,6 +661,9 @@ export default function App() {
     'red_goose_expense_receipts',
     'petc_sales_receipts',
     'income_receipts',
+    'petc_income_receipts',
+    'red_goose_income_receipts',
+    'knoah_mari_income_receipts',
     'petc_insurance_receipts',
     'petc_expense_receipts',
     'consumables_receipts',
@@ -1409,7 +1412,11 @@ export default function App() {
 
       const targetTable = isSales
         ? (ent === 'PETC' ? 'petc_sales_receipts' : 'inventory_items')
-        : 'income_receipts';
+        : entLower.includes('red')
+          ? 'red_goose_income_receipts'
+          : entLower.includes('knoah')
+            ? 'knoah_mari_income_receipts'
+            : 'petc_income_receipts';
       const labelType = isSales ? 'Daily Sales' : 'Daily Income';
       const titleText = `${ent} ${labelType} (${recordDate})`;
       const fileName = `${isSales ? 'SALES' : 'INC'}_${ent.replace(/\s+/g, '_').toUpperCase()}_${recordDate}.daily`;

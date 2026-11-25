@@ -28,7 +28,7 @@ class StoreReceiptRequest extends FormRequest
             'table' => [
                 'required',
                 'string',
-                'in:petc_sales_receipts,income_receipts,petc_insurance_receipts,petc_expense_receipts,red_goose_expense_receipts,knoah_mari_expense_receipts,consumables_receipts,voucher_receipts,inventory_items',
+                'in:petc_sales_receipts,income_receipts,petc_income_receipts,red_goose_income_receipts,knoah_mari_income_receipts,petc_insurance_receipts,petc_expense_receipts,red_goose_expense_receipts,knoah_mari_expense_receipts,consumables_receipts,voucher_receipts,inventory_items',
             ],
             'file_name' => ['required', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
