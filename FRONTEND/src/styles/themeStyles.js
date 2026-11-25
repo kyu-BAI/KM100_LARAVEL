@@ -2354,6 +2354,33 @@ export function createStyles(isLight = true) {
       color: isLight ? '#252525' : '#f8fafc',
       fontSize: 13
     },
+    inputLabel: {
+      fontSize: 11.5,
+      fontWeight: '700',
+      letterSpacing: 0.4,
+      color: '#cbd5e1',
+      marginBottom: 6
+    },
+    inputLabelLight: {
+      color: '#334155'
+    },
+    input: {
+      backgroundColor: '#0f172a',
+      borderWidth: 1.5,
+      borderColor: '#334155',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: '#f8fafc',
+      fontSize: 13.5,
+      fontWeight: '500'
+    },
+    inputLight: {
+      backgroundColor: '#f8fafc',
+      borderWidth: 1.5,
+      borderColor: '#cbd5e1',
+      color: '#0f172a'
+    },
     ocrActionsRow: {
       flexDirection: 'row',
       gap: 10,

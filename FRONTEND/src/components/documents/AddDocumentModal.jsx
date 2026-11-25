@@ -474,17 +474,17 @@ export default function AddDocumentModal({
                           paddingHorizontal: 8,
                           borderRadius: 8,
                           borderWidth: 1.5,
-                          borderColor: isSelected ? '#f47721' : (isLight ? '#e2e8f0' : '#334155'),
-                          backgroundColor: isSelected ? (isLight ? '#fff7ed' : 'rgba(244, 119, 33, 0.15)') : (isLight ? '#ffffff' : '#1e293b'),
-                          opacity: isDisabled ? 0.4 : 1,
+                          borderColor: isSelected ? '#f47721' : (isLight ? '#cbd5e1' : '#334155'),
+                          backgroundColor: isSelected ? (isLight ? '#fff7ed' : 'rgba(244, 119, 33, 0.15)') : (isLight ? '#f8fafc' : '#1e293b'),
+                          opacity: isDisabled ? 0.45 : 1,
                           cursor: isDisabled ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        <Building2 size={15} color={isSelected ? '#f47721' : '#94a3b8'} />
+                        <Building2 size={15} color={isSelected ? '#f47721' : (isLight ? '#64748b' : '#94a3b8')} />
                         <Text style={{
-                          fontWeight: isSelected ? '700' : '500',
-                          fontSize: 12,
-                          color: isSelected ? '#f47721' : (isLight ? '#334155' : '#cbd5e1')
+                          fontWeight: isSelected ? '700' : '600',
+                          fontSize: 12.5,
+                          color: isSelected ? '#ea580c' : (isLight ? '#1e293b' : '#cbd5e1')
                         }} numberOfLines={1}>
                           {store}
                         </Text>
@@ -499,13 +499,15 @@ export default function AddDocumentModal({
                   alignItems: 'center',
                   gap: 8,
                   padding: 10,
-                  borderRadius: 6,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: isLight ? '#cbd5e1' : '#334155',
                   backgroundColor: isLight ? '#f1f5f9' : '#0f172a',
                   marginBottom: 16
                 }}>
-                  <Package size={16} color="#fbbf24" />
-                  <Text style={{ fontSize: 12, color: isLight ? '#475569' : '#94a3b8' }}>
-                    Classification: <Text style={{ fontWeight: '700', color: isLight ? '#1e293b' : '#f8fafc' }}>
+                  <Package size={16} color="#f59e0b" />
+                  <Text style={{ fontSize: 12.5, color: isLight ? '#475569' : '#94a3b8' }}>
+                    Classification: <Text style={{ fontWeight: '700', color: isLight ? '#0f172a' : '#f8fafc' }}>
                       {consumableEntity === 'PETC' ? 'Consumables > Office supplies' : 'Consumables > Store Consumables'}
                     </Text>
                   </Text>
@@ -642,24 +644,24 @@ export default function AddDocumentModal({
                 </View>
 
                 {/* Quick Unit Measure Presets */}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14, marginTop: -6 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14, marginTop: -4 }}>
                   {['pcs', 'bottle', 'gallon', 'box', 'pack', 'roll', 'can', 'kg', 'reams', 'set'].map(u => (
                     <TouchableOpacity
                       key={u}
                       onPress={() => setConsumableUnit(u)}
                       style={{
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 4,
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 6,
                         borderWidth: 1,
                         borderColor: consumableUnit === u ? '#f47721' : (isLight ? '#cbd5e1' : '#334155'),
-                        backgroundColor: consumableUnit === u ? (isLight ? '#fff7ed' : 'rgba(244, 119, 33, 0.2)') : 'transparent'
+                        backgroundColor: consumableUnit === u ? (isLight ? '#fff7ed' : 'rgba(244, 119, 33, 0.2)') : (isLight ? '#f1f5f9' : '#1e293b')
                       }}
                     >
                       <Text style={{
-                        fontSize: 11,
-                        fontWeight: '600',
-                        color: consumableUnit === u ? '#f47721' : (isLight ? '#475569' : '#94a3b8')
+                        fontSize: 11.5,
+                        fontWeight: consumableUnit === u ? '700' : '600',
+                        color: consumableUnit === u ? '#ea580c' : (isLight ? '#334155' : '#cbd5e1')
                       }}>
                         {u}
                       </Text>
@@ -669,7 +671,7 @@ export default function AddDocumentModal({
 
                 {/* 7. Total Amount (Column 9 from reference) */}
                 <View style={{ marginBottom: 14 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <Text style={[styles.inputLabel, isLight && styles.inputLabelLight, { marginBottom: 0 }]}>
                       TOTAL AMOUNT (PHP) *
                     </Text>
@@ -678,9 +680,19 @@ export default function AddDocumentModal({
                     </Text>
                   </View>
                   <TextInput
-                    style={[styles.input, { fontWeight: '700', fontSize: 15 }, isLight && styles.inputLight]}
+                    style={[
+                      styles.input,
+                      isLight && styles.inputLight,
+                      {
+                        fontWeight: '700',
+                        fontSize: 15,
+                        backgroundColor: isLight ? '#ecfdf5' : 'rgba(16, 185, 129, 0.08)',
+                        borderColor: isLight ? '#6ee7b7' : '#059669',
+                        color: isLight ? '#047857' : '#34d399'
+                      }
+                    ]}
                     placeholder="0.00"
-                    placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
+                    placeholderTextColor={isLight ? '#6ee7b7' : '#64748b'}
                     keyboardType="numeric"
                     value={consumableAmount}
                     onChangeText={setConsumableAmount}
@@ -704,19 +716,19 @@ export default function AddDocumentModal({
                             flexDirection: 'row',
                             alignItems: 'center',
                             gap: 6,
-                            paddingHorizontal: 10,
-                            paddingVertical: 6,
+                            paddingHorizontal: 12,
+                            paddingVertical: 7,
                             borderRadius: 6,
-                            borderWidth: 1,
+                            borderWidth: 1.5,
                             borderColor: isSel ? dotColor : (isLight ? '#cbd5e1' : '#334155'),
-                            backgroundColor: isSel ? (isLight ? '#f8fafc' : '#1e293b') : 'transparent'
+                            backgroundColor: isSel ? (isLight ? '#ffffff' : '#1e293b') : (isLight ? '#f8fafc' : '#0f172a')
                           }}
                         >
                           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
                           <Text style={{
                             fontSize: 12,
-                            fontWeight: isSel ? '700' : '400',
-                            color: isLight ? '#334155' : '#cbd5e1'
+                            fontWeight: isSel ? '700' : '600',
+                            color: isSel ? (isLight ? '#0f172a' : '#f8fafc') : (isLight ? '#475569' : '#94a3b8')
                           }}>
                             {st}
                           </Text>
@@ -732,7 +744,7 @@ export default function AddDocumentModal({
                     REMARKS / STORAGE LOCATION (OPTIONAL)
                   </Text>
                   <TextInput
-                    style={[styles.input, { minHeight: 50, textAlignVertical: 'top' }, isLight && styles.inputLight]}
+                    style={[styles.input, { minHeight: 56, textAlignVertical: 'top' }, isLight && styles.inputLight]}
                     placeholder="e.g. Stored in ground floor supply cabinet; purchased for cleaning"
                     placeholderTextColor={isLight ? '#94a3b8' : '#64748b'}
                     multiline
@@ -742,7 +754,7 @@ export default function AddDocumentModal({
                 </View>
               </ScrollView>
 
-              <View style={styles.modalFooter}>
+              <View style={[styles.modalFooter, isLight && styles.modalFooterLight]}>
                 <TouchableOpacity
                   style={styles.btnSecondary}
                   onPress={closeAddModal}
@@ -751,7 +763,7 @@ export default function AddDocumentModal({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.btnPrimary, (!consumableName?.trim() || isSavingConsumable) && { opacity: 0.6 }]}
+                  style={[styles.btnPrimary, (!consumableName?.trim() || isSavingConsumable) && { opacity: 0.65 }]}
                   disabled={!consumableName?.trim() || isSavingConsumable}
                   onPress={handleSaveStoreConsumable}
                 >
