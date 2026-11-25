@@ -114,7 +114,7 @@ export default function TopHeader({
               <Text
                 style={[styles.brandSub, isLight && styles.brandSubLight, isMobile && { fontSize: 11 }]}
                 numberOfLines={1}
-              >Document Management System
+              >Document&Inventory Management System
               </Text>
           </View>
         </View>
@@ -126,11 +126,11 @@ export default function TopHeader({
             <Search size={15} color={isLight ? '#888888' : '#94a3b8'} />
             <TextInput
               style={[styles.headerSearchInput, isLight && styles.headerSearchInputLight]}
-              placeholder="Search store, receipt title, invoice #, amount..."
+              placeholder="Search"
               placeholderTextColor={isLight ? '#888888' : '#64748b'}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              accessibilityLabel="Search inventory by store, receipt title, invoice number, or amount"
+              accessibilityLabel="Search"
               autoComplete="off"
               autoCorrect={false}
               spellCheck={false}

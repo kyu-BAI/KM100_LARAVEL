@@ -685,7 +685,7 @@ export default function AddDocumentModal({
                     if (isRedGooseEmployee) return rt.entity === 'Red Goose' || rt.id.includes('red');
                     if (isPetcEmployee) return rt.entity === 'PETC' || rt.id.includes('petc');
                     if (isConsumablesEmployee) return false;
-                    if (isSalesIncomeEmployee) return rt.category === 'PETC Sales' || rt.category === 'PETC Income';
+                    if (isSalesIncomeEmployee) return rt.category.includes('Sales') || rt.category.includes('Income') || rt.categoryId === 'sales' || rt.categoryId === 'income';
                     return false;
                   }).map(rt => {
                     const isSelected = selectedReceiptType.id === rt.id;

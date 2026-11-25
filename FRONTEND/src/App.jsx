@@ -165,10 +165,10 @@ export default function App() {
       const amt = parseFloat(item.amount) || 0;
       const cat = (item.category || item.categoryId || '').toLowerCase();
 
-      if (cat.includes('sale') || cat.includes('emission') || cat === 'petc-sales') {
+      if (cat.includes('sale') || cat.includes('emission') || cat === 'petc-sales' || cat === 'sales') {
         totalSales += amt;
         totalSalesCount++;
-      } else if (cat.includes('income') || cat.includes('revenue') || cat.includes('collection') || cat === 'petc-income') {
+      } else if (cat.includes('income') || cat.includes('revenue') || cat.includes('collection') || cat === 'petc-income' || cat === 'income') {
         totalIncome += amt;
         totalIncomeCount++;
       } else if (cat.includes('expense') || cat === 'expenses') {
@@ -193,6 +193,8 @@ export default function App() {
 
   // Tree expansion state
   const [expandedNodes, setExpandedNodes] = useState({
+    'sales': true,
+    'income': true,
     'petc-sales': true,
     'petc-sales-2026': false,
     'petc-income': true,
@@ -854,8 +856,8 @@ export default function App() {
           itemCat === activeType ||
           itemCat.replace(/\s+/g, '-') === activeType ||
           (activeType === 'expenses' && itemCat.includes('expense')) ||
-          (activeType === 'petc-sales' && (itemCat.includes('sale') || itemCat.includes('emission'))) ||
-          (activeType === 'petc-income' && (itemCat.includes('income') || itemCat.includes('revenue') || itemCat.includes('collection'))) ||
+          ((activeType === 'sales' || activeType === 'petc-sales') && (itemCat.includes('sale') || itemCat.includes('emission'))) ||
+          ((activeType === 'income' || activeType === 'petc-income') && (itemCat.includes('income') || itemCat.includes('revenue') || itemCat.includes('collection'))) ||
           (activeType === 'petc-insurance' && (itemCat.includes('insurance') || itemCat.includes('ctpl'))) ||
           (activeType === 'consumables' && itemCat.includes('consumable')) ||
           (activeType === 'vouchers' && itemCat.includes('voucher'));
@@ -931,18 +933,18 @@ export default function App() {
           if (isKnoah) {
             matchesSub =
               (itemEntity.includes('knoah') || itemSub.includes('knoah') || itemTitle.includes('knoah')) &&
-              (!has2026 || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
-              (!has2027 || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
+              (!has2026 || !itemYear || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
+              (!has2027 || !itemYear || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
           } else if (isRedGoose) {
             matchesSub =
               (itemEntity.includes('red') || itemSub.includes('red') || itemTitle.includes('red')) &&
-              (!has2026 || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
-              (!has2027 || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
+              (!has2026 || !itemYear || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
+              (!has2027 || !itemYear || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
           } else if (isPetc) {
             matchesSub =
               (itemEntity.includes('petc') || itemSub.includes('petc') || itemTitle.includes('petc')) &&
-              (!has2026 || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
-              (!has2027 || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
+              (!has2026 || !itemYear || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
+              (!has2027 || !itemYear || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
           } else {
             const tokens = target.split(/[-_ ]+/).filter(Boolean);
             matchesSub = tokens.every(
@@ -995,8 +997,8 @@ export default function App() {
           itemCat === activeType ||
           itemCat.replace(/\s+/g, '-') === activeType ||
           (activeType === 'expenses' && itemCat.includes('expense')) ||
-          (activeType === 'petc-sales' && (itemCat.includes('sale') || itemCat.includes('emission'))) ||
-          (activeType === 'petc-income' && (itemCat.includes('income') || itemCat.includes('revenue') || itemCat.includes('collection'))) ||
+          ((activeType === 'sales' || activeType === 'petc-sales') && (itemCat.includes('sale') || itemCat.includes('emission'))) ||
+          ((activeType === 'income' || activeType === 'petc-income') && (itemCat.includes('income') || itemCat.includes('revenue') || itemCat.includes('collection'))) ||
           (activeType === 'petc-insurance' && (itemCat.includes('insurance') || itemCat.includes('ctpl'))) ||
           (activeType === 'consumables' && itemCat.includes('consumable')) ||
           (activeType === 'vouchers' && itemCat.includes('voucher'));
@@ -1071,18 +1073,18 @@ export default function App() {
           if (isKnoah) {
             matchesSub =
               (itemEntity.includes('knoah') || itemSub.includes('knoah') || itemTitle.includes('knoah')) &&
-              (!has2026 || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
-              (!has2027 || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
+              (!has2026 || !itemYear || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
+              (!has2027 || !itemYear || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
           } else if (isRedGoose) {
             matchesSub =
               (itemEntity.includes('red') || itemSub.includes('red') || itemTitle.includes('red')) &&
-              (!has2026 || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
-              (!has2027 || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
+              (!has2026 || !itemYear || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
+              (!has2027 || !itemYear || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
           } else if (isPetc) {
             matchesSub =
               (itemEntity.includes('petc') || itemSub.includes('petc') || itemTitle.includes('petc')) &&
-              (!has2026 || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
-              (!has2027 || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
+              (!has2026 || !itemYear || itemYear === '2026' || itemSub.includes('2026') || itemTitle.includes('2026')) &&
+              (!has2027 || !itemYear || itemYear === '2027' || itemSub.includes('2027') || itemTitle.includes('2027'));
           } else {
             const tokens = target.split(/[-_ ]+/).filter(Boolean);
             matchesSub = tokens.every(
@@ -1153,25 +1155,49 @@ export default function App() {
 
     // Auto-select receipt classification based on current active navigation context
     if (isKnoahEmployee) {
-      const match = RECEIPT_TYPES.find(r => r.id === 'expenses-knoah-mari');
-      if (match) setSelectedReceiptType(match);
+      if (activeNav.type === 'sales' || activeNav.type === 'petc-sales') {
+        const match = RECEIPT_TYPES.find(r => r.id === 'knoah-mari-sales');
+        if (match) setSelectedReceiptType(match);
+      } else if (activeNav.type === 'income' || activeNav.type === 'petc-income') {
+        const match = RECEIPT_TYPES.find(r => r.id === 'knoah-mari-income');
+        if (match) setSelectedReceiptType(match);
+      } else {
+        const match = RECEIPT_TYPES.find(r => r.id === 'expenses-knoah-mari');
+        if (match) setSelectedReceiptType(match);
+      }
     } else if (isRedGooseEmployee) {
-      const match = RECEIPT_TYPES.find(r => r.id === 'expenses-red-goose');
+      if (activeNav.type === 'sales' || activeNav.type === 'petc-sales') {
+        const match = RECEIPT_TYPES.find(r => r.id === 'red-goose-sales');
+        if (match) setSelectedReceiptType(match);
+      } else if (activeNav.type === 'income' || activeNav.type === 'petc-income') {
+        const match = RECEIPT_TYPES.find(r => r.id === 'red-goose-income');
+        if (match) setSelectedReceiptType(match);
+      } else {
+        const match = RECEIPT_TYPES.find(r => r.id === 'expenses-red-goose');
+        if (match) setSelectedReceiptType(match);
+      }
+    } else if (activeNav.type === 'sales' || activeNav.type === 'petc-sales') {
+      let salesId = 'petc-sales';
+      const sub = (activeNav.subCategory || '').toLowerCase();
+      if (sub.includes('red')) salesId = 'red-goose-sales';
+      else if (sub.includes('knoah')) salesId = 'knoah-mari-sales';
+      const match = RECEIPT_TYPES.find(r => r.id === salesId) || RECEIPT_TYPES.find(r => r.id === 'petc-sales');
       if (match) setSelectedReceiptType(match);
-    } else if (activeNav.type === 'petc-sales') {
-      const match = RECEIPT_TYPES.find(r => r.id === 'petc-sales');
-      if (match) setSelectedReceiptType(match);
-    } else if (activeNav.type === 'petc-income') {
-      const match = RECEIPT_TYPES.find(r => r.id === 'petc-income');
+    } else if (activeNav.type === 'income' || activeNav.type === 'petc-income') {
+      let incomeId = 'petc-income';
+      const sub = (activeNav.subCategory || '').toLowerCase();
+      if (sub.includes('red')) incomeId = 'red-goose-income';
+      else if (sub.includes('knoah')) incomeId = 'knoah-mari-income';
+      const match = RECEIPT_TYPES.find(r => r.id === incomeId) || RECEIPT_TYPES.find(r => r.id === 'petc-income');
       if (match) setSelectedReceiptType(match);
     } else if (activeNav.type === 'petc-insurance') {
       const match = RECEIPT_TYPES.find(r => r.id === 'petc-insurance');
       if (match) setSelectedReceiptType(match);
     } else if (activeNav.type === 'expenses') {
       let expenseId = 'expenses-petc';
-      if (activeNav.subCategory?.includes('Red Goose')) {
+      if (activeNav.subCategory?.includes('Red Goose') || activeNav.subCategory?.toLowerCase().includes('red')) {
         expenseId = 'expenses-red-goose';
-      } else if (activeNav.subCategory?.includes('Knoah Mari')) {
+      } else if (activeNav.subCategory?.includes('Knoah Mari') || activeNav.subCategory?.toLowerCase().includes('knoah')) {
         expenseId = 'expenses-knoah-mari';
       }
       const match = RECEIPT_TYPES.find(r => r.id === expenseId);
@@ -1300,14 +1326,16 @@ export default function App() {
       let targetYear = activeNav.year;
       let targetMonth = activeNav.month;
 
-      if (activeNav.type === 'petc-sales') {
-        targetCategory = 'PETC Sales';
-        targetCategoryId = 'petc-sales';
-        targetEntity = 'PETC';
-      } else if (activeNav.type === 'petc-income') {
-        targetCategory = 'PETC Income';
-        targetCategoryId = 'petc-income';
-        targetEntity = 'PETC';
+      if (activeNav.type === 'sales' || activeNav.type === 'petc-sales') {
+        targetCategory = 'Sales';
+        targetCategoryId = 'sales';
+        targetSubCategory = activeNav.subCategory || 'Sales 2026 (PETC)';
+        targetEntity = activeNav.subCategory?.toLowerCase().includes('red') ? 'Red Goose' : activeNav.subCategory?.toLowerCase().includes('knoah') ? 'Knoah Mari' : 'PETC';
+      } else if (activeNav.type === 'income' || activeNav.type === 'petc-income') {
+        targetCategory = 'Income';
+        targetCategoryId = 'income';
+        targetSubCategory = activeNav.subCategory || 'Income 2026 (PETC)';
+        targetEntity = activeNav.subCategory?.toLowerCase().includes('red') ? 'Red Goose' : activeNav.subCategory?.toLowerCase().includes('knoah') ? 'Knoah Mari' : 'PETC';
       } else if (activeNav.type === 'expenses') {
         targetCategory = 'Expenses';
         targetCategoryId = 'expenses';
@@ -1641,10 +1669,10 @@ export default function App() {
       const targetMonth = activeNav.month || currentMonthName;
 
       let targetSubCat = selectedReceiptType.subCategory || 'Receipt Scan';
-      if (selectedReceiptType.categoryId === 'petc-sales') {
-        targetSubCat = targetMonth ? `Sales ${targetYear} (${targetMonth})` : 'Emission Testing Sales';
-      } else if (selectedReceiptType.categoryId === 'petc-income') {
-        targetSubCat = targetMonth ? `Income ${targetYear} (${targetMonth})` : 'Daily Collection';
+      if (selectedReceiptType.categoryId === 'petc-sales' || selectedReceiptType.categoryId === 'sales') {
+        targetSubCat = selectedReceiptType.subCategory || (targetMonth ? `Sales ${targetYear} (${targetMonth})` : 'Sales Receipt');
+      } else if (selectedReceiptType.categoryId === 'petc-income' || selectedReceiptType.categoryId === 'income') {
+        targetSubCat = selectedReceiptType.subCategory || (targetMonth ? `Income ${targetYear} (${targetMonth})` : 'Daily Collection');
       }
 
       const scannedItemPayload = {
