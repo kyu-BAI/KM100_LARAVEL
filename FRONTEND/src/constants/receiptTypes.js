@@ -67,15 +67,37 @@ export const RECEIPT_TYPES = [
     prefix: 'EXP-KM'
   },
   {
-    id: 'consumables-delivery',
-    name: 'Consumables Purchase Receipt',
+    id: 'consumables-petc-office',
+    name: 'PETC Office Supplies Receipt',
     tableName: 'consumables_receipts',
-    description: 'Office paper, cleaning chemicals & smoke filter deliveries',
+    description: 'PETC office supplies, printer paper, thermal rolls & ink',
     category: 'Consumables',
     categoryId: 'consumables',
-    subCategory: 'Office supply',
-    entity: 'General',
-    prefix: 'CNS'
+    subCategory: 'Office supplies',
+    entity: 'PETC',
+    prefix: 'CNS-PETC'
+  },
+  {
+    id: 'consumables-knoah-mari-store',
+    name: 'Knoah Mari Store Consumables',
+    tableName: 'consumables_receipts',
+    description: 'Knoah Mari store consumables, supplies, and kitchen materials',
+    category: 'Consumables',
+    categoryId: 'consumables',
+    subCategory: 'Store Consumables',
+    entity: 'Knoah Mari',
+    prefix: 'CNS-KM'
+  },
+  {
+    id: 'consumables-red-goose-store',
+    name: 'Red Goose Store Consumables',
+    tableName: 'consumables_receipts',
+    description: 'Red Goose store consumables, retail packaging, and supplies',
+    category: 'Consumables',
+    categoryId: 'consumables',
+    subCategory: 'Store Consumables',
+    entity: 'Red Goose',
+    prefix: 'CNS-RG'
   },
   {
     id: 'voucher-disbursement',

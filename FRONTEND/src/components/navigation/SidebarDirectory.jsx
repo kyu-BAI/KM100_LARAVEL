@@ -547,7 +547,7 @@ export default function SidebarDirectory({
               </View>
 
               {/* 5. CONSUMABLES */}
-              {(isAdmin || isConsumablesEmployee || hasAllBranchesScope) && (
+              {(isAdmin || isConsumablesEmployee || isPetcEmployee || isKnoahEmployee || isRedGooseEmployee || hasAllBranchesScope) && (
               <View style={styles.categoryBlock}>
                 <View
                   style={[
@@ -572,7 +572,7 @@ export default function SidebarDirectory({
                       {expandedNodes['consumables'] ? <ChevronDown size={15} color="#94a3b8" /> : <ChevronRight size={15} color="#94a3b8" />}
                     </TouchableOpacity>
                     <Package size={17} color="#fbbf24" />
-                    <Text style={[styles.treeCategoryTitle, activeNav.type === 'consumables' && styles.treeTextActive]} numberOfLines={1}>
+                    <Text style={[styles.treeCategoryTitle, activeNav.type === 'consumables' && !activeNav.subCategory && styles.treeTextActive]} numberOfLines={1}>
                       CONSUMABLES
                     </Text>
                   </TouchableOpacity>
@@ -593,31 +593,253 @@ export default function SidebarDirectory({
 
                 {expandedNodes['consumables'] && (
                   <View style={styles.treeChildren}>
-                    {[
-                      { id: 'office-supply', label: 'Office supply' },
-                      { id: 'cleaning-supply', label: 'Cleaning supply' },
-                      { id: 'red-goose-consumables', label: 'Red Goose' },
-                      { id: 'knoah-mari-consumables', label: 'Knoah Mari' }
-                    ].map(branch => (
+                    {/* PETC Dropdown */}
+                    {(isAdmin || isPetcEmployee || isConsumablesEmployee || hasAllBranchesScope) && (
+                      <View style={{ marginBottom: 3 }}>
+                        <View
+                          style={[
+                            styles.treeSubItem,
+                            (activeNav.type === 'consumables' && activeNav.subCategory === 'consumables-petc') && styles.treeItemActive,
+                            { justifyContent: 'space-between' }
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}
+                            onPress={() => {
+                              setActiveNav({
+                                type: 'consumables',
+                                year: null,
+                                month: null,
+                                subCategory: 'consumables-petc',
+                                label: 'Consumables > PETC'
+                              });
+                            }}
+                          >
+                            <TouchableOpacity onPress={() => toggleNode('consumables-petc')} style={styles.iconToggle}>
+                              {expandedNodes['consumables-petc'] ? <ChevronDown size={13} color="#94a3b8" /> : <ChevronRight size={13} color="#94a3b8" />}
+                            </TouchableOpacity>
+                            <Building2 size={14} color={isLight ? '#f47721' : '#f47721'} />
+                            <Text style={[styles.treeSubText, (activeNav.subCategory === 'consumables-petc' || activeNav.subCategory === 'petc-office-supplies') && styles.treeTextActive, { fontWeight: '600' }]} numberOfLines={1}>
+                              PETC
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.treeFolderExportBtn}
+                            onPress={() => exportFolderToExcel({
+                              type: 'consumables',
+                              year: null,
+                              month: null,
+                              subCategory: 'consumables-petc',
+                              label: 'Consumables > PETC'
+                            })}
+                            title="Export PETC Consumables to Excel (.xlsx)"
+                          >
+                            <FileSpreadsheet size={11} color={isLight ? '#059669' : '#34d399'} />
+                          </TouchableOpacity>
+                        </View>
+
+                        {expandedNodes['consumables-petc'] && (
+                          <View style={{ paddingLeft: 22, marginTop: 1 }}>
+                            <TouchableOpacity
+                              style={[
+                                styles.treeSubItem,
+                                activeNav.subCategory === 'petc-office-supplies' && styles.treeItemActive
+                              ]}
+                              onPress={() => {
+                                setActiveNav({
+                                  type: 'consumables',
+                                  year: null,
+                                  month: null,
+                                  subCategory: 'petc-office-supplies',
+                                  label: 'Consumables > PETC > Office supplies'
+                                });
+                              }}
+                            >
+                              <ChevronRight size={11} color="#94a3b8" />
+                              <Text style={[styles.treeSubText, activeNav.subCategory === 'petc-office-supplies' && styles.treeTextActive]} numberOfLines={1}>
+                                Office supplies
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Knoah Mari Dropdown */}
+                    {(isAdmin || isKnoahEmployee || isConsumablesEmployee || hasAllBranchesScope) && (
+                      <View style={{ marginBottom: 3 }}>
+                        <View
+                          style={[
+                            styles.treeSubItem,
+                            (activeNav.type === 'consumables' && activeNav.subCategory === 'consumables-knoah-mari') && styles.treeItemActive,
+                            { justifyContent: 'space-between' }
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}
+                            onPress={() => {
+                              setActiveNav({
+                                type: 'consumables',
+                                year: null,
+                                month: null,
+                                subCategory: 'consumables-knoah-mari',
+                                label: 'Consumables > Knoah Mari'
+                              });
+                            }}
+                          >
+                            <TouchableOpacity onPress={() => toggleNode('consumables-knoah')} style={styles.iconToggle}>
+                              {expandedNodes['consumables-knoah'] ? <ChevronDown size={13} color="#94a3b8" /> : <ChevronRight size={13} color="#94a3b8" />}
+                            </TouchableOpacity>
+                            <Building2 size={14} color={isLight ? '#f47721' : '#f47721'} />
+                            <Text style={[styles.treeSubText, (activeNav.subCategory === 'consumables-knoah-mari' || activeNav.subCategory === 'knoah-mari-store-consumables') && styles.treeTextActive, { fontWeight: '600' }]} numberOfLines={1}>
+                              Knoah Mari
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.treeFolderExportBtn}
+                            onPress={() => exportFolderToExcel({
+                              type: 'consumables',
+                              year: null,
+                              month: null,
+                              subCategory: 'consumables-knoah-mari',
+                              label: 'Consumables > Knoah Mari'
+                            })}
+                            title="Export Knoah Mari Consumables to Excel (.xlsx)"
+                          >
+                            <FileSpreadsheet size={11} color={isLight ? '#059669' : '#34d399'} />
+                          </TouchableOpacity>
+                        </View>
+
+                        {expandedNodes['consumables-knoah'] && (
+                          <View style={{ paddingLeft: 22, marginTop: 1 }}>
+                            <TouchableOpacity
+                              style={[
+                                styles.treeSubItem,
+                                activeNav.subCategory === 'knoah-mari-store-consumables' && styles.treeItemActive
+                              ]}
+                              onPress={() => {
+                                setActiveNav({
+                                  type: 'consumables',
+                                  year: null,
+                                  month: null,
+                                  subCategory: 'knoah-mari-store-consumables',
+                                  label: 'Consumables > Knoah Mari > Store Consumables'
+                                });
+                              }}
+                            >
+                              <ChevronRight size={11} color="#94a3b8" />
+                              <Text style={[styles.treeSubText, activeNav.subCategory === 'knoah-mari-store-consumables' && styles.treeTextActive]} numberOfLines={1}>
+                                Store Consumables
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Red Goose Dropdown */}
+                    {(isAdmin || isRedGooseEmployee || isConsumablesEmployee || hasAllBranchesScope) && (
+                      <View style={{ marginBottom: 3 }}>
+                        <View
+                          style={[
+                            styles.treeSubItem,
+                            (activeNav.type === 'consumables' && activeNav.subCategory === 'consumables-red-goose') && styles.treeItemActive,
+                            { justifyContent: 'space-between' }
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}
+                            onPress={() => {
+                              setActiveNav({
+                                type: 'consumables',
+                                year: null,
+                                month: null,
+                                subCategory: 'consumables-red-goose',
+                                label: 'Consumables > Red Goose'
+                              });
+                            }}
+                          >
+                            <TouchableOpacity onPress={() => toggleNode('consumables-redgoose')} style={styles.iconToggle}>
+                              {expandedNodes['consumables-redgoose'] ? <ChevronDown size={13} color="#94a3b8" /> : <ChevronRight size={13} color="#94a3b8" />}
+                            </TouchableOpacity>
+                            <Building2 size={14} color={isLight ? '#f47721' : '#f47721'} />
+                            <Text style={[styles.treeSubText, (activeNav.subCategory === 'consumables-red-goose' || activeNav.subCategory === 'red-goose-store-consumables') && styles.treeTextActive, { fontWeight: '600' }]} numberOfLines={1}>
+                              Red Goose
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.treeFolderExportBtn}
+                            onPress={() => exportFolderToExcel({
+                              type: 'consumables',
+                              year: null,
+                              month: null,
+                              subCategory: 'consumables-red-goose',
+                              label: 'Consumables > Red Goose'
+                            })}
+                            title="Export Red Goose Consumables to Excel (.xlsx)"
+                          >
+                            <FileSpreadsheet size={11} color={isLight ? '#059669' : '#34d399'} />
+                          </TouchableOpacity>
+                        </View>
+
+                        {expandedNodes['consumables-redgoose'] && (
+                          <View style={{ paddingLeft: 22, marginTop: 1 }}>
+                            <TouchableOpacity
+                              style={[
+                                styles.treeSubItem,
+                                activeNav.subCategory === 'red-goose-store-consumables' && styles.treeItemActive
+                              ]}
+                              onPress={() => {
+                                setActiveNav({
+                                  type: 'consumables',
+                                  year: null,
+                                  month: null,
+                                  subCategory: 'red-goose-store-consumables',
+                                  label: 'Consumables > Red Goose > Store Consumables'
+                                });
+                              }}
+                            >
+                              <ChevronRight size={11} color="#94a3b8" />
+                              <Text style={[styles.treeSubText, activeNav.subCategory === 'red-goose-store-consumables' && styles.treeTextActive]} numberOfLines={1}>
+                                Store Consumables
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* All Supplies (Combined View) */}
+                    {(isAdmin || hasAllBranchesScope) && (
                       <TouchableOpacity
-                        key={branch.id}
-                        style={[styles.treeSubItem, activeNav.subCategory === branch.id && styles.treeItemActive]}
+                        style={[
+                          styles.treeSubItem,
+                          (activeNav.type === 'consumables' && activeNav.subCategory === 'all-supplies') && styles.treeItemActive,
+                          { marginTop: 4, borderTopWidth: 1, borderTopColor: isLight ? '#f1f5f9' : '#1e293b', paddingTop: 6 }
+                        ]}
                         onPress={() => {
                           setActiveNav({
                             type: 'consumables',
                             year: null,
                             month: null,
-                            subCategory: branch.id,
-                            label: `Consumables > ${branch.label}`
+                            subCategory: 'all-supplies',
+                            label: 'Consumables > All Supplies'
                           });
                         }}
                       >
-                        <ChevronRight size={12} color="#94a3b8" />
-                        <Text style={[styles.treeSubText, activeNav.subCategory === branch.id && styles.treeTextActive]} numberOfLines={1}>
-                          {branch.label}
+                        <ChevronRight size={11} color="#94a3b8" />
+                        <Text
+                          style={[
+                            styles.treeSubText,
+                            (activeNav.type === 'consumables' && activeNav.subCategory === 'all-supplies') && styles.treeTextActive,
+                            { fontWeight: '600' }
+                          ]}
+                          numberOfLines={1}
+                        >
+                          All Supplies
                         </Text>
                       </TouchableOpacity>
-                    ))}
+                    )}
                   </View>
                 )}
               </View>

@@ -199,6 +199,9 @@ export default function App() {
     'petc-income-2026': false,
     'expenses': true,
     'consumables': true,
+    'consumables-petc': true,
+    'consumables-knoah': true,
+    'consumables-redgoose': true,
     'vouchers': true,
     'petc-insurance': true,
     'petc-insurance-2026': false,
@@ -861,6 +864,30 @@ export default function App() {
         const itemTitle = (item.title || '').toLowerCase();
         const itemYear = String(item.year || '').toLowerCase();
 
+        // 4.1 Consumables Specific Branch & Supplies Filtering
+        if (activeType === 'consumables') {
+          if (target === 'all-supplies') {
+            return true;
+          }
+          const isKnoahTarget = target.includes('knoah');
+          const isRedGooseTarget = target.includes('red');
+          const isPetcTarget = target.includes('petc') || target.includes('office');
+
+          if (isPetcTarget) {
+            const matches = itemEntity.includes('petc') || itemSub.includes('petc') || itemSub.includes('office') || itemTitle.includes('office');
+            if (!matches) return false;
+            return true;
+          } else if (isKnoahTarget) {
+            const matches = itemEntity.includes('knoah') || itemSub.includes('knoah') || itemTitle.includes('knoah');
+            if (!matches) return false;
+            return true;
+          } else if (isRedGooseTarget) {
+            const matches = itemEntity.includes('red') || itemSub.includes('red') || itemTitle.includes('red');
+            if (!matches) return false;
+            return true;
+          }
+        }
+
         // Exact slug match or direct inclusion
         const exactMatch =
           itemSubId === target ||
@@ -978,6 +1005,30 @@ export default function App() {
         const itemTitle = (item.title || '').toLowerCase();
         const itemYear = String(item.year || '').toLowerCase();
 
+        // 4.1 Consumables Specific Branch & Supplies Filtering
+        if (activeType === 'consumables') {
+          if (target === 'all-supplies') {
+            return true;
+          }
+          const isKnoahTarget = target.includes('knoah');
+          const isRedGooseTarget = target.includes('red');
+          const isPetcTarget = target.includes('petc') || target.includes('office');
+
+          if (isPetcTarget) {
+            const matches = itemEntity.includes('petc') || itemSub.includes('petc') || itemSub.includes('office') || itemTitle.includes('office');
+            if (!matches) return false;
+            return true;
+          } else if (isKnoahTarget) {
+            const matches = itemEntity.includes('knoah') || itemSub.includes('knoah') || itemTitle.includes('knoah');
+            if (!matches) return false;
+            return true;
+          } else if (isRedGooseTarget) {
+            const matches = itemEntity.includes('red') || itemSub.includes('red') || itemTitle.includes('red');
+            if (!matches) return false;
+            return true;
+          }
+        }
+
         const exactMatch =
           itemSubId === target ||
           itemSub === target ||
@@ -1076,7 +1127,14 @@ export default function App() {
       const match = RECEIPT_TYPES.find(r => r.id === expenseId);
       if (match) setSelectedReceiptType(match);
     } else if (activeNav.type === 'consumables') {
-      const match = RECEIPT_TYPES.find(r => r.id === 'consumables-delivery');
+      let receiptId = 'consumables-petc-office';
+      const sub = (activeNav.subCategory || '').toLowerCase();
+      if (sub.includes('knoah')) {
+        receiptId = 'consumables-knoah-mari-store';
+      } else if (sub.includes('red')) {
+        receiptId = 'consumables-red-goose-store';
+      }
+      const match = RECEIPT_TYPES.find(r => r.id === receiptId) || RECEIPT_TYPES.find(r => r.category === 'Consumables');
       if (match) setSelectedReceiptType(match);
     } else if (activeNav.type === 'vouchers') {
       const match = RECEIPT_TYPES.find(r => r.id === 'voucher-disbursement');

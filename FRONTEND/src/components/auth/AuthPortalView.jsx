@@ -209,7 +209,7 @@ export default function AuthPortalView({
                 if (setAuthError) setAuthError('');
               }}
               accessibilityRole="tab"
-              accessibilityLabel="Create Admin Account Tab"
+              accessibilityLabel="Create Admin Account"
               accessibilityState={{ selected: authMode === 'register' }}
             >
               <UserPlus size={15} color={authMode === 'register' ? '#f47721' : (isLight ? '#475569' : '#94a3b8')} />
