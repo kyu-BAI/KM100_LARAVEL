@@ -15,7 +15,7 @@ import { RECEIPT_TYPES } from './constants/receiptTypes';
 import { EMPLOYEE_ROLES, EMPLOYEE_DEPARTMENTS } from './constants/employeeConfig';
 import { SHORT_MONTHS as months } from './constants/calendar';
 import { createStyles } from './styles/themeStyles';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import {
   View,
   Text,
@@ -833,6 +833,7 @@ export default function App() {
   const isSalesOrIncomeView = isSalesView || isIncomeView;
 
   // Filter items strictly based on the left sidebar navigation and employee branch scope
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const filteredItems = useMemo(() => {
     // If viewing All Inventory Files and the user has toggled off displaying all files
     if (activeNav.type === 'all' && !showAllFiles) {
@@ -981,8 +982,8 @@ export default function App() {
       }
 
       // 5. Search Query
-      if (searchQuery.trim() !== '') {
-        const q = searchQuery.toLowerCase();
+      if (deferredSearchQuery.trim() !== '') {
+        const q = deferredSearchQuery.toLowerCase();
         const inName = item.fileName?.toLowerCase().includes(q);
         const inTitle = item.title?.toLowerCase().includes(q);
         const inEst = item.establishment?.toLowerCase().includes(q);
@@ -997,7 +998,7 @@ export default function App() {
 
       return true;
     });
-  }, [items, activeNav, searchQuery, showAllFiles]);
+  }, [items, activeNav, deferredSearchQuery, showAllFiles]);
 
   // Helper to extract items matching any specific folder navigation node
   const getItemsForFolder = (navTarget) => {

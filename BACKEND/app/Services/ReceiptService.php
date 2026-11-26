@@ -79,7 +79,35 @@ class ReceiptService
             $modelClass = $this->resolveModelClass($tableName);
 
             /** @var Builder $query */
-            $query = $modelClass::query();
+            $query = $modelClass::query()->select([
+                'id',
+                'user_id',
+                'file_name',
+                'title',
+                'establishment',
+                'receipt_date',
+                'description',
+                'category',
+                'category_id',
+                'sub_category',
+                'sub_category_id',
+                'entity',
+                'year',
+                'month',
+                'amount',
+                'currency',
+                'quantity',
+                'unit',
+                'status',
+                'file_format',
+                'file_size',
+                'notes',
+                'tags',
+                'preview_data',
+                'scanned_at',
+                'created_at',
+                'updated_at',
+            ]);
 
             // Enforce employee branch ownership
             if ($user->isEmployee() && !empty($user->branch) && $user->branch !== 'All') {
