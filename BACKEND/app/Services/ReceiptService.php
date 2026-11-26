@@ -264,6 +264,10 @@ class ReceiptService
             // Also clean up across any dedicated table
             $dedicatedTables = [
                 'petc_sales_receipts',
+                'income_receipts',
+                'petc_income_receipts',
+                'red_goose_income_receipts',
+                'knoah_mari_income_receipts',
                 'petc_insurance_receipts',
                 'petc_expense_receipts',
                 'red_goose_expense_receipts',

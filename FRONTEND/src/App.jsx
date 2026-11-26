@@ -670,28 +670,29 @@ export default function App() {
     'voucher_receipts'
   ];
 
-  // Ref flag to ensure queries never run concurrently
+  // Ref flag to ensure queries never run concurrently + cooldown tracking for maximum API efficiency
   const isFetchingRef = useRef(false);
+  const lastSyncAtRef = useRef(0);
 
   // Lightweight columns for master inventory table to avoid Postgres statement timeout on large base64 image blobs
   const MASTER_INVENTORY_COLUMNS = 'id, file_name, title, category, category_id, sub_category, sub_category_id, entity, year, month, amount, currency, quantity, unit, status, file_format, file_size, notes, tags, created_at, updated_at, establishment, receipt_date, description';
 
-  // Fetch data directly across ALL tables in parallel via Laravel REST API
-  const fetchData = async (silent = false) => {
+  // Fetch data via Laravel REST API (uses single mirrored master table by default for 92% fewer requests)
+  const fetchData = async (silent = false, forceFull = false) => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     if (!silent) setLoading(true);
     setIsSyncing(true);
 
     try {
-      // Query master inventory and all dedicated receipt tables concurrently via Laravel REST API
-      const queries = ALL_RECEIPT_TABLES.map(table => backend.fetchTable(table));
+      const tablesToQuery = forceFull ? ALL_RECEIPT_TABLES : ['inventory_items'];
+      const queries = tablesToQuery.map(table => backend.fetchTable(table));
 
       const responses = await Promise.allSettled(queries);
       const itemMap = new Map();
 
       responses.forEach((res, index) => {
-        const tableName = ALL_RECEIPT_TABLES[index];
+        const tableName = tablesToQuery[index];
         if (res.status === 'fulfilled' && res.value && !res.value.error && Array.isArray(res.value.data)) {
           res.value.data.forEach(rawRow => {
             const mapped = mapFromDb(rawRow, tableName);
@@ -736,6 +737,7 @@ export default function App() {
         setItems(mergedItems);
         saveCachedItems(mergedItems, currentUser);
         setCacheSyncLabel('Just now');
+        lastSyncAtRef.current = Date.now();
       }
     } catch (err) {
       console.warn('Realtime fetch fallback:', err);
@@ -769,16 +771,20 @@ export default function App() {
     // Initial load: fetch silently in background if cache already loaded data
     fetchData(hasCached);
 
-    // 1. Instant sync when user switches back to browser tab
+    // 1. Throttled sync when user switches back to browser tab (max once per 60s)
     const handleFocus = () => {
-      fetchData(true);
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (Date.now() - lastSyncAtRef.current >= 60000) {
+        fetchData(true);
+      }
     };
     window.addEventListener('focus', handleFocus);
 
-    // 2. Gentle background sync every 30 seconds
+    // 2. Low-frequency background sync every 5 minutes (paused when tab is hidden)
     const gentleInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       fetchData(true);
-    }, 30000);
+    }, 300000);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
@@ -1357,10 +1363,13 @@ export default function App() {
       mappedItem.unitCost = numUnitCost;
       mappedItem.itemNo = itemNoVal;
 
-      setItems(prev => [mappedItem, ...prev.filter(i => i.id !== id)]);
+      setItems(prev => {
+        const next = [mappedItem, ...prev.filter(i => i.id !== id)];
+        saveCachedItems(next, currentUser);
+        return next;
+      });
       closeAddModal();
       showNotice(`${recordEntity === 'PETC' ? 'Office supply' : 'Consumable'} "${itemName}" ${isEditing ? 'updated' : 'saved'} successfully!`);
-      fetchData(true);
     } catch (err) {
       console.error('Failed to save consumable:', err);
       showNotice(`Error saving consumable: ${err.message || 'Server error'}`);
@@ -1462,9 +1471,12 @@ export default function App() {
       }
 
       const mapped = mapFromDb(record, targetTable);
-      setItems(prev => [mapped, ...prev.filter(i => i.id !== recordId)]);
+      setItems(prev => {
+        const next = [mapped, ...prev.filter(i => i.id !== recordId)];
+        saveCachedItems(next, currentUser);
+        return next;
+      });
       showNotice(`${labelType} for ${ent} (${recordDate}) ${isEditing ? 'updated' : 'saved'}!`);
-      fetchData(true);
     } catch (err) {
       console.error('Failed to save daily sales/income:', err);
       showNotice(`Error saving daily entry: ${err.message || 'Server error'}`);
@@ -2033,7 +2045,6 @@ export default function App() {
       });
       showNotice(`Deleted "${name}"`);
       if (viewItem?.id === id) setViewItem(null);
-      fetchData(true);
     } catch (err) {
       console.error(err);
       showNotice('Failed to delete item', 'error');
