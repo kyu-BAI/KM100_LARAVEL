@@ -288,7 +288,8 @@ export default function SalesIncomeCalendarView({
           gap: 14,
           zIndex: 20
         }}>
-          {/* Step 1: Establishment Selector */}
+          {/* Step 1: Establishment Selector (hidden when an establishment is already selected in sidebar) */}
+          {!activeNav?.subCategory && (
           <View>
             <Text style={[styles.inputLabel, isLight && styles.inputLabelLight]}>
               ESTABLISHMENT / BRANCH *
@@ -337,6 +338,7 @@ export default function SalesIncomeCalendarView({
               })}
             </View>
           </View>
+          )}
 
           {/* Step 2: Dropdown Calendar + Daily Amount + Remarks */}
           <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start', zIndex: 30 }}>
