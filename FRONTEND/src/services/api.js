@@ -72,6 +72,9 @@ export async function initCsrf() {
     await fetch(`${SANCTUM_URL}/sanctum/csrf-cookie`, {
       method: 'GET',
       credentials: 'include',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
     });
   } catch (err) {
     console.warn('Could not initialize Sanctum CSRF cookie:', err);
@@ -88,6 +91,7 @@ async function request(endpoint, options = {}) {
 
   const headers = {
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
     ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
