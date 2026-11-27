@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useDeferredValue, lazy, Su
 import DocumentTableView from './components/documents/DocumentTableView';
 import DocumentCardsView from './components/documents/DocumentCardsView';
 import RenameDocumentModal from './components/documents/RenameDocumentModal';
+import ConfirmActionModal from './components/common/ConfirmActionModal';
 import TopHeader from './components/navigation/TopHeader';
 import SidebarDirectory from './components/navigation/SidebarDirectory';
 import AuthPortalView from './components/auth/AuthPortalView';
@@ -214,6 +215,42 @@ export default function App() {
   // Document Viewer Modal State
   const [viewItem, setViewItem] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const formatFriendlyError = (err, fallback = 'Something went wrong. Please try again.') => {
+    const raw = (err?.data?.message || err?.message || '').trim();
+    const status = err?.status;
+    if (status === 401) return 'Your session expired. Please sign in again.';
+    if (status === 403) return 'You do not have permission to perform this action.';
+    if (status === 422 && raw) return raw;
+    if (raw.toLowerCase().includes('unreachable') || raw.toLowerCase().includes('failed to fetch')) {
+      return 'Cannot reach the server. Please make sure the backend and database are running.';
+    }
+    return raw || fallback;
+  };
+
+  // Close top-most open modal with Escape key for keyboard accessibility
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (confirmDeleteTarget && !isDeleting) {
+        setConfirmDeleteTarget(null);
+      } else if (renameItem && !isRenaming) {
+        setRenameItem(null);
+        setRenameNewName('');
+      } else if (viewItem) {
+        setViewItem(null);
+      } else if (showAddModal) {
+        closeAddModal();
+      } else if (showEmployeeModal) {
+        setShowEmployeeModal(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [confirmDeleteTarget, isDeleting, renameItem, isRenaming, viewItem, showAddModal, showEmployeeModal]);
 
   // Lazy-load high-resolution document image if opening an item where filePath wasn't in the initial list query
   useEffect(() => {
@@ -2035,12 +2072,18 @@ export default function App() {
   };
 
   // Delete Item (Strictly restricted to Admin accounts only)
-  const handleDeleteItem = async (id, name) => {
+  const handleDeleteItem = (id, name) => {
     if (!isAdmin) {
-      showNotice('Access Denied: Only administrators have permission to delete receipts.', 'error');
+      showNotice('Access Denied: Only administrators have permission to delete records.', 'error');
       return;
     }
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    setConfirmDeleteTarget({ id, name });
+  };
+
+  const executeDeleteItem = async () => {
+    if (!confirmDeleteTarget || isDeleting) return;
+    const { id, name } = confirmDeleteTarget;
+    setIsDeleting(true);
     try {
       const itemToDelete = items.find(i => i.id === id);
       if (itemToDelete?.sourceTable && itemToDelete.sourceTable !== 'inventory_items') {
@@ -2054,9 +2097,12 @@ export default function App() {
       });
       showNotice(`Deleted "${name}"`);
       if (viewItem?.id === id) setViewItem(null);
+      setConfirmDeleteTarget(null);
     } catch (err) {
       console.error(err);
-      showNotice('Failed to delete item', 'error');
+      showNotice(formatFriendlyError(err, 'Failed to delete item.'), 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -2643,6 +2689,25 @@ export default function App() {
         onClose={() => {
           setRenameItem(null);
           setRenameNewName('');
+        }}
+        isLight={isLight}
+        isMobile={isMobile}
+        styles={styles}
+      />
+
+      {/* ======================================================== */}
+      {/* 4. CONFIRM DELETE MODAL                                  */}
+      {/* ======================================================== */}
+      <ConfirmActionModal
+        visible={!!confirmDeleteTarget}
+        title="Delete Record"
+        message="Are you sure you want to permanently remove this record from the database?"
+        itemName={confirmDeleteTarget?.name}
+        confirmLabel="Delete Record"
+        isProcessing={isDeleting}
+        onConfirm={executeDeleteItem}
+        onCancel={() => {
+          if (!isDeleting) setConfirmDeleteTarget(null);
         }}
         isLight={isLight}
         isMobile={isMobile}

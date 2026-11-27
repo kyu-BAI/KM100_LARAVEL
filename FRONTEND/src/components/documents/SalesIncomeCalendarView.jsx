@@ -518,6 +518,11 @@ export default React.memo(function SalesIncomeCalendarView({
                 value={amountInput}
                 onChangeText={setAmountInput}
               />
+              {amountInput.trim() !== '' && (isNaN(parseFloat(amountInput)) || parseFloat(amountInput) < 0) && (
+                <Text style={{ fontSize: 11.5, color: '#ef4444', marginTop: 4, fontWeight: '600' }}>
+                  Please enter a valid non-negative amount.
+                </Text>
+              )}
             </View>
 
             {/* Notes / Remarks Input */}

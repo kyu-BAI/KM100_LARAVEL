@@ -296,6 +296,9 @@ export default React.memo(function DocumentTableView({
                     <TouchableOpacity
                       onPress={() => toggleGroup(category)}
                       activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: !isCollapsed }}
+                      accessibilityLabel={`${category} section (${items.length} records)`}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
