@@ -438,7 +438,9 @@ export default function AddDocumentModal({
           {addMode === 'store-consumable' && (
             <>
               <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                {/* 1. Establishment Selector */}
+                {/* 1. Establishment Selector (hidden when an establishment is already selected in sidebar) */}
+                {(!activeNav?.subCategory || activeNav?.subCategory === 'all-supplies') && (
+                <>
                 <Text style={[styles.inputLabel, { marginBottom: 6 }, isLight && styles.inputLabelLight]}>
                   ESTABLISHMENT / BRANCH *
                 </Text>
@@ -492,6 +494,8 @@ export default function AddDocumentModal({
                     );
                   })}
                 </View>
+                </>
+                )}
 
                 {/* 2. Category classification banner */}
                 <View style={{
