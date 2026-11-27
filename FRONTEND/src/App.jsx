@@ -1,21 +1,21 @@
-import AddDocumentModal from './components/documents/AddDocumentModal';
+import React, { useState, useEffect, useMemo, useRef, useDeferredValue, lazy, Suspense } from 'react';
 import DocumentTableView from './components/documents/DocumentTableView';
-import ConsumablesTableView from './components/documents/ConsumablesTableView';
-import SalesIncomeCalendarView from './components/documents/SalesIncomeCalendarView';
 import DocumentCardsView from './components/documents/DocumentCardsView';
-import DocumentViewerModal from './components/documents/DocumentViewerModal';
 import RenameDocumentModal from './components/documents/RenameDocumentModal';
 import TopHeader from './components/navigation/TopHeader';
 import SidebarDirectory from './components/navigation/SidebarDirectory';
-import AdminPortalPage from './components/admin/AdminPortalPage';
 import AuthPortalView from './components/auth/AuthPortalView';
 import EmployeeSessionModal from './components/employee/EmployeeSessionModal';
-import { exportRecordsToExcel } from './services/excelService';
 import { RECEIPT_TYPES } from './constants/receiptTypes';
 import { EMPLOYEE_ROLES, EMPLOYEE_DEPARTMENTS } from './constants/employeeConfig';
 import { SHORT_MONTHS as months } from './constants/calendar';
 import { createStyles } from './styles/themeStyles';
-import React, { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
+
+const AddDocumentModal = lazy(() => import('./components/documents/AddDocumentModal'));
+const ConsumablesTableView = lazy(() => import('./components/documents/ConsumablesTableView'));
+const SalesIncomeCalendarView = lazy(() => import('./components/documents/SalesIncomeCalendarView'));
+const DocumentViewerModal = lazy(() => import('./components/documents/DocumentViewerModal'));
+const AdminPortalPage = lazy(() => import('./components/admin/AdminPortalPage'));
 import {
   View,
   Text,
@@ -1124,11 +1124,12 @@ export default function App() {
     });
   };
 
-  // Export any selected folder's records into a clean, executive formal Excel (.xlsx) file
-  const exportFolderToExcel = (targetNav) => {
+  // Export any selected folder's records into a clean, executive formal Excel (.xlsx) file (lazy-loads xlsx bundle on demand)
+  const exportFolderToExcel = async (targetNav) => {
     const nav = targetNav || activeNav;
     const folderLabel = nav.label || 'Inventory Folder';
     const folderItems = getItemsForFolder(nav);
+    const { exportRecordsToExcel } = await import('./services/excelService');
     exportRecordsToExcel({ folderLabel, folderItems, showNotice });
   };
 
@@ -2249,6 +2250,7 @@ export default function App() {
         />
 
         {/* MAIN VIEWING AREA */}
+        <Suspense fallback={<View style={styles.loadingContainer}><ActivityIndicator size="large" color="#f47721" /></View>}>
         {currentPage === 'admin' && isAdmin ? (
           <AdminPortalPage
             currentUser={currentUser}
@@ -2511,6 +2513,7 @@ export default function App() {
             )}
           </View>
         )}
+        </Suspense>
       </View>
 
       {/* EMPLOYEE STAFF PROFILE & LOGOUT MODAL */}
@@ -2527,6 +2530,7 @@ export default function App() {
       {/* ======================================================== */}
       {/* 1. DOCUMENT VIEWER MODAL                                 */}
       {/* ======================================================== */}
+      <Suspense fallback={null}>
       <DocumentViewerModal
         viewItem={viewItem}
         onClose={() => setViewItem(null)}
@@ -2629,6 +2633,7 @@ export default function App() {
         isMobile={isMobile}
         styles={styles}
       />
+      </Suspense>
 
       {/* ======================================================== */}
       {/* 3. RENAME DOCUMENT MODAL                                  */}
