@@ -17,7 +17,7 @@ export function getGeminiApiKey() {
       // ignore localStorage errors
     }
   }
-  return (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || '';
+  return '';
 }
 
 export function setCustomGeminiApiKey(_key) {
@@ -27,36 +27,12 @@ export function setCustomGeminiApiKey(_key) {
 /**
  * Tests whether OCR / Gemini AI service is available.
  */
-export async function testGeminiApiKey(candidateKey) {
-  if (isLaravelDriver()) {
-    try {
-      const res = await api.checkGeminiHealth();
-      return { ok: res?.success === true, message: 'Backend Gemini AI service is verified and online.' };
-    } catch (err) {
-      return { ok: false, error: err.data?.message || err.message || 'Cannot connect to backend Gemini AI service.' };
-    }
-  }
-
-  const keyToTest = (candidateKey || getGeminiApiKey() || '').trim();
-  if (!keyToTest) {
-    return { ok: false, error: 'No API key provided.' };
-  }
+export async function testGeminiApiKey() {
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${keyToTest}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: 'Ping test. Reply with OK' }] }]
-      })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const msg = data?.error?.message || `HTTP ${res.status}`;
-      return { ok: false, error: msg };
-    }
-    return { ok: true };
+    const res = await api.checkGeminiHealth();
+    return { ok: res?.success === true, message: 'Backend Gemini AI service is verified and online.' };
   } catch (err) {
-    return { ok: false, error: err.message || 'Network connection error' };
+    return { ok: false, error: err.data?.message || err.message || 'Cannot connect to backend Gemini AI service.' };
   }
 }
 

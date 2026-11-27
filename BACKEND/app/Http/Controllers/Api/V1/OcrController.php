@@ -22,8 +22,8 @@ class OcrController extends Controller
     public function process(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'image' => 'required|string',
-            'receipt_type' => 'nullable|string',
+            'image' => 'required|string|max:15000000',
+            'receipt_type' => 'nullable|string|max:120',
         ]);
 
         $result = $this->ocrService->extractReceiptData(

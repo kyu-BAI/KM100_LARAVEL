@@ -57,14 +57,22 @@ class FileStorageService
         }
 
         // Check if string is a base64 image data URL
-        if (preg_match('/^data:image\/(\w+);base64,/', $filePathData, $matches)) {
+        if (preg_match('/^data:image\/([a-zA-Z0-9]+);base64,/', $filePathData, $matches)) {
             $imageType = strtolower($matches[1]);
-            $base64Data = substr($filePathData, strpos($filePathData, ',') + 1);
-            $decodedBinary = base64_decode($base64Data);
+            $allowedImageTypes = ['jpg', 'jpeg', 'png', 'webp'];
+            if (!in_array($imageType, $allowedImageTypes, true)) {
+                throw new InvalidArgumentException("Unsupported image subtype [{$imageType}]. Allowed: jpg, jpeg, png, webp.");
+            }
 
-            if ($decodedBinary === false) {
-                // If decoding fails, retain raw string to prevent data loss
-                return $filePathData;
+            $base64Data = substr($filePathData, strpos($filePathData, ',') + 1);
+            $decodedBinary = base64_decode($base64Data, true);
+
+            if ($decodedBinary === false || strlen($decodedBinary) === 0) {
+                throw new InvalidArgumentException('Invalid base64 image payload.');
+            }
+
+            if (strlen($decodedBinary) > 20 * 1024 * 1024) {
+                throw new InvalidArgumentException('Uploaded image exceeds the 20 MB maximum size limit.');
             }
 
             $extension = ($imageType === 'jpeg' || $imageType === 'jpg') ? 'jpg' : $imageType;
@@ -98,15 +106,20 @@ class FileStorageService
         }
 
         // Branch-level access authorization for employee accounts
-        if ($user && $user->isEmployee() && !empty($user->branch) && $user->branch !== 'All') {
+        if ($user && $user->isEmployee() && !empty($user->branch) && strtolower(trim($user->branch)) !== 'all') {
             $url = Storage::disk($this->disk)->url($cleanPath);
+            $userBranchLower = strtolower(trim($user->branch));
             $receiptModels = [
+                \App\Models\InventoryItem::class,
                 \App\Models\PetcExpenseReceipt::class,
                 \App\Models\RedGooseExpenseReceipt::class,
                 \App\Models\KnoahMariExpenseReceipt::class,
                 \App\Models\PetcSalesReceipt::class,
+                \App\Models\IncomeReceipt::class,
+                \App\Models\PetcIncomeReceipt::class,
+                \App\Models\RedGooseIncomeReceipt::class,
+                \App\Models\KnoahMariIncomeReceipt::class,
                 \App\Models\PetcInsuranceReceipt::class,
-                \App\Models\InventoryItem::class,
                 \App\Models\ConsumablesReceipt::class,
                 \App\Models\VoucherReceipt::class,
             ];
@@ -117,7 +130,7 @@ class FileStorageService
                       ->orWhere('file_path', 'like', "%{$url}%");
                 })->first();
 
-                if ($foreignRecord && !empty($foreignRecord->entity) && $foreignRecord->entity !== $user->branch) {
+                if ($foreignRecord && !empty($foreignRecord->entity) && strtolower(trim($foreignRecord->entity)) !== $userBranchLower) {
                     throw new AccessDeniedHttpException("Unauthorized access to file belonging to branch: [{$foreignRecord->entity}].");
                 }
             }

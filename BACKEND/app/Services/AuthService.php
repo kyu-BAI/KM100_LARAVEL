@@ -165,8 +165,8 @@ class AuthService
 
         return [
             'success' => true,
-            'message' => 'Password reset token generated successfully.',
-            'token' => $plainToken,
+            'message' => 'If this email is registered, a password reset token has been generated.',
+            'token' => null,
         ];
     }
 

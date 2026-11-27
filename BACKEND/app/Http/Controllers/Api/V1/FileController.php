@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Services\FileStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class FileController extends Controller
 {
@@ -22,6 +24,10 @@ class FileController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        if (!$request->user()->isAdmin()) {
+            throw new AccessDeniedHttpException('Only administrators can list storage files.');
+        }
+
         $folder = $request->query('folder', 'documents');
         $files = $this->storageService->listFiles($folder);
 
@@ -79,10 +85,20 @@ class FileController extends Controller
         }
 
         $folder = $request->input('folder', 'receipts');
-        $url = $this->storageService->storeReceiptImage(
-            $base64Payload,
-            $folder
-        );
+        try {
+            $url = $this->storageService->storeReceiptImage(
+                $base64Payload,
+                $folder
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'file' => [$e->getMessage()],
+                ],
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,

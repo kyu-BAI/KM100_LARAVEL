@@ -187,32 +187,34 @@ class ReceiptService
 
         $data['user_id'] = $user->id;
 
-        // Upsert support: If record with ID already exists, update it
-        $receipt = null;
-        if (!empty($data['id'])) {
-            $existing = $modelClass::find($data['id']);
-            if ($existing) {
-                $existing->update($data);
-                $receipt = $existing;
+        // Wrap primary write + inventory_items mirror in a transaction to prevent dual-storage drift
+        $receipt = DB::transaction(function () use ($modelClass, $tableName, $data) {
+            if (!empty($data['id'])) {
+                $existing = $modelClass::find($data['id']);
+                if ($existing) {
+                    $existing->update($data);
+                    $saved = $existing;
+                } else {
+                    $saved = $modelClass::create($data);
+                }
             } else {
-                $receipt = $modelClass::create($data);
+                $saved = $modelClass::create($data);
             }
-        } else {
-            $receipt = $modelClass::create($data);
-        }
 
-        // DUAL-STORAGE RULE: If saved to a dedicated table, mirror to inventory_items
-        if ($tableName !== 'inventory_items') {
-            $mirrorData = $data;
-            unset($mirrorData['table']);
-            $mirrorData['id'] = $receipt->id;
-            $existingMirror = InventoryItem::find($receipt->id);
-            if ($existingMirror) {
-                $existingMirror->update($mirrorData);
-            } else {
-                InventoryItem::create($mirrorData);
+            if ($tableName !== 'inventory_items') {
+                $mirrorData = $data;
+                unset($mirrorData['table']);
+                $mirrorData['id'] = $saved->id;
+                $existingMirror = InventoryItem::find($saved->id);
+                if ($existingMirror) {
+                    $existingMirror->update($mirrorData);
+                } else {
+                    InventoryItem::create($mirrorData);
+                }
             }
-        }
+
+            return $saved;
+        });
 
         $this->invalidateReceiptCache();
 
@@ -231,8 +233,8 @@ class ReceiptService
             throw new NotFoundHttpException("Record with ID [{$id}] not found in table [{$tableName}].");
         }
 
-        if ($user->isEmployee() && !empty($user->branch) && $user->branch !== 'All') {
-            if ($record->entity !== $user->branch) {
+        if ($user->isEmployee() && !empty($user->branch) && strtolower(trim($user->branch)) !== 'all') {
+            if (strtolower(trim((string) $record->entity)) !== strtolower(trim($user->branch))) {
                 throw new AccessDeniedHttpException("Access denied to records outside assigned branch.");
             }
         }
@@ -247,8 +249,8 @@ class ReceiptService
     {
         $record = $this->findReceipt($user, $tableName, $id);
 
-        if ($user->isEmployee() && !empty($user->branch) && $user->branch !== 'All') {
-            if (isset($data['entity']) && $data['entity'] !== $user->branch) {
+        if ($user->isEmployee() && !empty($user->branch) && strtolower(trim($user->branch)) !== 'all') {
+            if (isset($data['entity']) && strtolower(trim((string) $data['entity'])) !== strtolower(trim($user->branch))) {
                 throw new AccessDeniedHttpException("Cannot change entity outside assigned branch.");
             }
         }
@@ -257,15 +259,17 @@ class ReceiptService
             $data['file_path'] = $this->fileStorageService->storeReceiptImage($data['file_path']);
         }
 
-        $record->update($data);
+        DB::transaction(function () use ($record, $tableName, $id, $data) {
+            $record->update($data);
 
-        // DUAL-STORAGE RULE: If updated in dedicated table, mirror to inventory_items
-        if ($tableName !== 'inventory_items') {
-            $existingMirror = InventoryItem::find($id);
-            if ($existingMirror) {
-                $existingMirror->update($data);
+            // DUAL-STORAGE RULE: If updated in dedicated table, mirror to inventory_items
+            if ($tableName !== 'inventory_items') {
+                $existingMirror = InventoryItem::find($id);
+                if ($existingMirror) {
+                    $existingMirror->update($data);
+                }
             }
-        }
+        });
 
         $this->invalidateReceiptCache();
 
@@ -331,6 +335,10 @@ class ReceiptService
             } else {
                 $dedicatedTables = [
                     'petc_sales_receipts',
+                    'income_receipts',
+                    'petc_income_receipts',
+                    'red_goose_income_receipts',
+                    'knoah_mari_income_receipts',
                     'petc_insurance_receipts',
                     'petc_expense_receipts',
                     'red_goose_expense_receipts',

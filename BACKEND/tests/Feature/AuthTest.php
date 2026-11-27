@@ -170,15 +170,22 @@ class AuthTest extends TestCase
         ]);
 
         $forgotResponse->assertStatus(200)
-            ->assertJson(['success' => true]);
+            ->assertJson(['success' => true])
+            ->assertJsonMissingPath('token');
 
-        $token = $forgotResponse->json('token');
-        $this->assertNotEmpty($token);
+        // Verify hashed token was stored in DB and simulate out-of-band delivery
+        $plainToken = \Illuminate\Support\Str::random(64);
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', 'admin@km100.ph')
+            ->update([
+                'token' => Hash::make($plainToken),
+                'created_at' => now(),
+            ]);
 
-        // 2. Reset password using token
+        // 2. Reset password using out-of-band token
         $resetResponse = $this->postJson('/api/v1/auth/reset-password', [
             'email' => 'admin@km100.ph',
-            'token' => $token,
+            'token' => $plainToken,
             'password' => 'NewAdminPass2026!',
             'password_confirmation' => 'NewAdminPass2026!',
         ]);

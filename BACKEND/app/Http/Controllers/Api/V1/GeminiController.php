@@ -35,8 +35,8 @@ class GeminiController extends Controller
     public function processReceipt(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'image' => 'required|string',
-            'receipt_type' => 'nullable|string',
+            'image' => 'required|string|max:15000000',
+            'receipt_type' => 'nullable|string|max:120',
         ]);
 
         $result = $this->geminiService->extractReceiptData(
@@ -53,9 +53,9 @@ class GeminiController extends Controller
     public function generate(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'prompt' => 'required|string',
-            'system_instruction' => 'nullable|string',
-            'model' => 'nullable|string',
+            'prompt' => 'required|string|max:12000',
+            'system_instruction' => 'nullable|string|max:4000',
+            'model' => 'nullable|string|max:80',
         ]);
 
         $result = $this->geminiService->generateText(

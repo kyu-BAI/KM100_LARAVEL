@@ -20,13 +20,39 @@ class ReceiptController extends Controller
         $this->receiptService = $receiptService;
     }
 
+    protected const ALLOWED_TABLES = [
+        'petc_sales_receipts',
+        'income_receipts',
+        'petc_income_receipts',
+        'red_goose_income_receipts',
+        'knoah_mari_income_receipts',
+        'petc_insurance_receipts',
+        'petc_expense_receipts',
+        'red_goose_expense_receipts',
+        'knoah_mari_expense_receipts',
+        'consumables_receipts',
+        'voucher_receipts',
+        'inventory_items',
+    ];
+
+    protected function validateTableName(Request $request): string
+    {
+        $table = $request->query('table') ?: $request->input('table', 'inventory_items');
+        if (!in_array($table, self::ALLOWED_TABLES, true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'table' => ['The selected table is invalid.'],
+            ]);
+        }
+        return $table;
+    }
+
     /**
      * List receipts based on table, branch, and filters.
      */
     public function index(Request $request): JsonResponse
     {
+        $table = $this->validateTableName($request);
         $filters = $request->only([
-            'table',
             'entity',
             'year',
             'month',
@@ -35,6 +61,7 @@ class ReceiptController extends Controller
             'search',
             'limit',
         ]);
+        $filters['table'] = $table;
 
         $receipts = $this->receiptService->listReceipts($request->user(), $filters);
 
@@ -67,7 +94,7 @@ class ReceiptController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $tableName = $request->query('table') ?: $request->input('table', 'inventory_items');
+        $tableName = $this->validateTableName($request);
         $receipt = $this->receiptService->findReceipt($request->user(), $tableName, $id);
 
         return response()->json([
@@ -99,7 +126,7 @@ class ReceiptController extends Controller
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $tableName = $request->query('table') ?: $request->input('table', 'inventory_items');
+        $tableName = $this->validateTableName($request);
         $this->receiptService->deleteReceipt($request->user(), $tableName, $id);
 
         return response()->json([

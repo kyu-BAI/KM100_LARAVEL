@@ -131,12 +131,11 @@ class AuthController extends Controller
             'email' => 'required|email',
         ]);
 
-        $result = $this->authService->forgotPassword($validated['email'], $request);
+        $this->authService->forgotPassword($validated['email'], $request);
 
         return response()->json([
             'success' => true,
-            'message' => $result['message'],
-            'token' => $result['token'],
+            'message' => 'If this email is registered, a password reset link or token has been issued.',
         ], 200);
     }
 

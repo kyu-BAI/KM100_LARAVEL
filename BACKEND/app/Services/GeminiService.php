@@ -67,10 +67,12 @@ class GeminiService
         $lastError = 'Unknown error';
 
         foreach ($this->getAvailableModels() as $model) {
-            $endpoint = "{$this->apiBase}/models/{$model}:generateContent?key={$this->apiKey}";
+            $endpoint = "{$this->apiBase}/models/{$model}:generateContent";
 
             try {
-                $response = Http::timeout(15)->post($endpoint, [
+                $response = Http::timeout(15)
+                    ->withHeaders(['x-goog-api-key' => $this->apiKey])
+                    ->post($endpoint, [
                     'contents' => [
                         [
                             'parts' => [
@@ -196,9 +198,11 @@ Important:
 
         foreach ($modelsToTry as $model) {
             try {
-                $endpoint = "{$this->apiBase}/models/{$model}:generateContent?key={$this->apiKey}";
+                $endpoint = "{$this->apiBase}/models/{$model}:generateContent";
 
-                $response = Http::timeout(35)->post($endpoint, [
+                $response = Http::timeout(35)
+                    ->withHeaders(['x-goog-api-key' => $this->apiKey])
+                    ->post($endpoint, [
                     'contents' => [
                         [
                             'parts' => [
@@ -330,10 +334,12 @@ Important:
         $lastError = 'Unknown error';
 
         foreach ($modelsToTry as $candidateModel) {
-            $endpoint = "{$this->apiBase}/models/{$candidateModel}:generateContent?key={$this->apiKey}";
+            $endpoint = "{$this->apiBase}/models/{$candidateModel}:generateContent";
 
             try {
-                $response = Http::timeout(15)->post($endpoint, $payload);
+                $response = Http::timeout(15)
+                    ->withHeaders(['x-goog-api-key' => $this->apiKey])
+                    ->post($endpoint, $payload);
 
                 if ($response->successful()) {
                     $json = $response->json();
