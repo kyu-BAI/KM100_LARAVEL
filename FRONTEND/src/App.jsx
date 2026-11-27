@@ -1635,6 +1635,17 @@ export default function App() {
     }
   };
 
+  // Ensure video element receives the active MediaStream after mounting
+  useEffect(() => {
+    if (cameraActive && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.setAttribute('playsinline', 'true');
+      videoRef.current.setAttribute('autoplay', 'true');
+      videoRef.current.setAttribute('muted', 'true');
+      videoRef.current.play().catch(e => console.warn('Video play warning:', e));
+    }
+  }, [cameraActive, cameraStream]);
+
   const stopCamera = () => {
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());

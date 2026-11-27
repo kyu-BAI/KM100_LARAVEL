@@ -1699,25 +1699,22 @@ export default function AddDocumentModal({
                 ) : (
                   /* Scan Mode Options */
                   <View style={[styles.scanTriggerGrid, isMobile && { flexDirection: 'column' }]}>
-                    {/* Option 1: Live In-Browser Viewfinder */}
-                    <TouchableOpacity style={styles.scanOptionBtn} onPress={() => startCamera('environment')}>
-                      <View style={styles.scanOptionIconBox}>
-                        <Camera size={26} color="#34d399" />
-                      </View>
-                      <Text style={styles.scanOptionTitle}>Open Live Camera Viewfinder</Text>
-                      <Text style={styles.scanOptionSub}>Point device camera with alignment frame to read receipt</Text>
-                    </TouchableOpacity>
-
-                    {/* Option 2: Native Phone Camera App */}
+                    {/* Option 1: Take Photo with Camera (opens laptop/device camera directly) */}
                     <TouchableOpacity
                       style={[styles.scanOptionBtn, styles.scanOptionBtnNative]}
-                      onPress={() => document.getElementById('mobileCameraInput')?.click()}
+                      onPress={() => {
+                        if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+                          startCamera('environment');
+                        } else {
+                          document.getElementById('mobileCameraInput')?.click();
+                        }
+                      }}
                     >
                       <View style={[styles.scanOptionIconBox, { backgroundColor: 'rgba(56, 189, 248, 0.1)', borderColor: 'rgba(56, 189, 248, 0.3)' }]}>
-                        <Smartphone size={26} color="#f47721" />
+                        <Camera size={26} color="#f47721" />
                       </View>
                       <Text style={styles.scanOptionTitle}>Take Photo with Phone Camera</Text>
-                      <Text style={styles.scanOptionSub}>Take clear photo, auto-read establishment, date & amount</Text>
+                      <Text style={styles.scanOptionSub}>Open laptop or device camera to capture & auto-read receipt</Text>
                     </TouchableOpacity>
 
                     {/* Option 3: Upload Existing Photo */}
