@@ -230,28 +230,6 @@ export default function App() {
     return raw || fallback;
   };
 
-  // Close top-most open modal with Escape key for keyboard accessibility
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onKeyDown = (e) => {
-      if (e.key !== 'Escape') return;
-      if (confirmDeleteTarget && !isDeleting) {
-        setConfirmDeleteTarget(null);
-      } else if (renameItem && !isRenaming) {
-        setRenameItem(null);
-        setRenameNewName('');
-      } else if (viewItem) {
-        setViewItem(null);
-      } else if (showAddModal) {
-        closeAddModal();
-      } else if (showEmployeeModal) {
-        setShowEmployeeModal(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [confirmDeleteTarget, isDeleting, renameItem, isRenaming, viewItem, showAddModal, showEmployeeModal]);
-
   // Lazy-load high-resolution document image if opening an item where filePath wasn't in the initial list query
   useEffect(() => {
     if (!viewItem || viewItem.filePath) return;
@@ -2197,6 +2175,28 @@ export default function App() {
     }
   };
 
+
+  // Close top-most open modal with Escape key for keyboard accessibility
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (confirmDeleteTarget && !isDeleting) {
+        setConfirmDeleteTarget(null);
+      } else if (renameItem && !isRenaming) {
+        setRenameItem(null);
+        setRenameNewName('');
+      } else if (viewItem) {
+        setViewItem(null);
+      } else if (showAddModal) {
+        closeAddModal();
+      } else if (showEmployeeModal) {
+        setShowEmployeeModal(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [confirmDeleteTarget, isDeleting, renameItem, isRenaming, viewItem, showAddModal, showEmployeeModal]);
 
   // ----------------------------------------------------
   // LOGIN / CREATE ADMIN ACCOUNT VIEW (If not logged in)
