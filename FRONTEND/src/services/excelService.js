@@ -231,33 +231,33 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
       { hpt: 25 }  // Row 4: Column Headers
     ];
 
-    // 7. Styling Palette
-    const brandNavy = { fgColor: { rgb: '0F172A' } };
-    const brandBlue = { fgColor: { rgb: '0284C7' } };
-    const metadataFill = { fgColor: { rgb: 'F1F5F9' } };
-    const headerFill = { fgColor: { rgb: 'E2E8F0' } };
-    const altRowFill = { fgColor: { rgb: 'F8FAFC' } };
-    const summaryFill = { fgColor: { rgb: 'E0F2FE' } };
+    // 7. KM100 Orange Styling Palette
+    const brandNavy = { fgColor: { rgb: '1E293B' } };
+    const brandBlue = { fgColor: { rgb: 'F47721' } };
+    const metadataFill = { fgColor: { rgb: 'FFF7ED' } };
+    const headerFill = { fgColor: { rgb: 'FFEDD5' } };
+    const altRowFill = { fgColor: { rgb: 'FFFBF5' } };
+    const summaryFill = { fgColor: { rgb: 'FFEDD5' } };
 
     const thinBorder = {
-      top: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      left: { style: 'thin', color: { rgb: 'E2E8F0' } },
-      right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+      top: { style: 'thin', color: { rgb: 'FED7AA' } },
+      bottom: { style: 'thin', color: { rgb: 'FED7AA' } },
+      left: { style: 'thin', color: { rgb: 'FED7AA' } },
+      right: { style: 'thin', color: { rgb: 'FED7AA' } }
     };
 
     const headerBorder = {
-      top: { style: 'medium', color: { rgb: '0284C7' } },
-      bottom: { style: 'medium', color: { rgb: '0284C7' } },
-      left: { style: 'thin', color: { rgb: 'CBD5E1' } },
-      right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      top: { style: 'medium', color: { rgb: 'F47721' } },
+      bottom: { style: 'medium', color: { rgb: 'F47721' } },
+      left: { style: 'thin', color: { rgb: 'FDBA74' } },
+      right: { style: 'thin', color: { rgb: 'FDBA74' } }
     };
 
     const doubleBottomBorder = {
-      top: { style: 'thin', color: { rgb: '0284C7' } },
-      bottom: { style: 'double', color: { rgb: '0F172A' } },
-      left: { style: 'thin', color: { rgb: 'CBD5E1' } },
-      right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+      top: { style: 'thin', color: { rgb: 'F47721' } },
+      bottom: { style: 'double', color: { rgb: '9A3412' } },
+      left: { style: 'thin', color: { rgb: 'FDBA74' } },
+      right: { style: 'thin', color: { rgb: 'FDBA74' } }
     };
 
     // Style Row 0: Company Header
