@@ -150,6 +150,7 @@ class ReceiptService
                 $perPage = max(1, min(200, (int) $filters['per_page']));
                 $page = max(1, (int) ($filters['page'] ?? 1));
                 return $query->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'asc')
                     ->skip(($page - 1) * $perPage)
                     ->take($perPage)
                     ->get();
@@ -157,7 +158,7 @@ class ReceiptService
 
             $limit = isset($filters['limit']) ? max(1, min(1000, (int) $filters['limit'])) : 500;
 
-            return $query->orderBy('created_at', 'desc')->limit($limit)->get();
+            return $query->orderBy('created_at', 'desc')->orderBy('id', 'asc')->limit($limit)->get();
         });
     }
 

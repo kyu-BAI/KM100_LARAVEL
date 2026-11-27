@@ -60,6 +60,8 @@ class ReceiptController extends Controller
             'status',
             'search',
             'limit',
+            'page',
+            'per_page',
         ]);
         $filters['table'] = $table;
 
