@@ -109,11 +109,11 @@ class ReceiptService
                 'updated_at',
             ]);
 
-            // Enforce employee branch ownership
-            if ($user->isEmployee() && !empty($user->branch) && $user->branch !== 'All') {
-                $query->whereRaw('LOWER(entity) = ?', [strtolower($user->branch)]);
+            // Enforce employee branch ownership (uses index on entity; utf8mb4_unicode_ci is case-insensitive)
+            if ($user->isEmployee() && !empty($user->branch) && strtolower(trim($user->branch)) !== 'all') {
+                $query->where('entity', trim($user->branch));
             } elseif (!empty($filters['entity'])) {
-                $query->where('entity', $filters['entity']);
+                $query->where('entity', trim((string) $filters['entity']));
             }
 
             if (!empty($filters['year'])) {
@@ -146,7 +146,16 @@ class ReceiptService
                 });
             }
 
-            $limit = isset($filters['limit']) ? (int) $filters['limit'] : 500;
+            if (!empty($filters['per_page'])) {
+                $perPage = max(1, min(200, (int) $filters['per_page']));
+                $page = max(1, (int) ($filters['page'] ?? 1));
+                return $query->orderBy('created_at', 'desc')
+                    ->skip(($page - 1) * $perPage)
+                    ->take($perPage)
+                    ->get();
+            }
+
+            $limit = isset($filters['limit']) ? max(1, min(1000, (int) $filters['limit'])) : 500;
 
             return $query->orderBy('created_at', 'desc')->limit($limit)->get();
         });
@@ -359,42 +368,34 @@ class ReceiptService
     }
 
     /**
-     * Calculate global system statistics across tables.
+     * Calculate global system statistics from the mirrored master inventory table (cached & non-duplicated).
      */
     public function getSystemStats(User $user): array
     {
-        $tables = [
-            'petc_sales_receipts',
-            'petc_insurance_receipts',
-            'petc_expense_receipts',
-            'red_goose_expense_receipts',
-            'knoah_mari_expense_receipts',
-            'consumables_receipts',
-            'voucher_receipts',
-            'inventory_items',
-        ];
+        $version = Cache::get('receipts:version', 1);
+        $userScope = ($user->isEmployee() && !empty($user->branch) && strtolower(trim($user->branch)) !== 'all')
+            ? 'emp_' . strtolower(trim($user->branch))
+            : 'admin';
 
-        $totalRecords = 0;
-        $totalAmount = 0.0;
-        $byEntity = [
-            'PETC' => ['count' => 0, 'amount' => 0.0],
-            'Red Goose' => ['count' => 0, 'amount' => 0.0],
-            'Knoah Mari' => ['count' => 0, 'amount' => 0.0],
-        ];
+        return Cache::remember("stats:v{$version}:{$userScope}", 120, function () use ($user) {
+            $query = InventoryItem::query();
 
-        foreach ($tables as $table) {
-            $modelClass = $this->resolveModelClass($table);
-            $query = $modelClass::query();
-
-            if ($user->isEmployee() && !empty($user->branch) && $user->branch !== 'All') {
-                $query->where('entity', $user->branch);
+            if ($user->isEmployee() && !empty($user->branch) && strtolower(trim($user->branch)) !== 'all') {
+                $query->where('entity', trim($user->branch));
             }
 
-            // High-performance single aggregated query grouped by entity (eliminates 56 repetitive queries)
-            $rows = (clone $query)
+            $rows = $query
                 ->selectRaw('entity, COUNT(*) as aggregate_count, COALESCE(SUM(amount), 0) as aggregate_sum')
                 ->groupBy('entity')
                 ->get();
+
+            $totalRecords = 0;
+            $totalAmount = 0.0;
+            $byEntity = [
+                'PETC' => ['count' => 0, 'amount' => 0.0],
+                'Red Goose' => ['count' => 0, 'amount' => 0.0],
+                'Knoah Mari' => ['count' => 0, 'amount' => 0.0],
+            ];
 
             foreach ($rows as $row) {
                 $eCount = (int) $row->aggregate_count;
@@ -409,12 +410,12 @@ class ReceiptService
                     $byEntity[$ent]['amount'] += $eSum;
                 }
             }
-        }
 
-        return [
-            'total_records' => $totalRecords,
-            'total_amount' => round($totalAmount, 2),
-            'by_entity' => $byEntity,
-        ];
+            return [
+                'total_records' => $totalRecords,
+                'total_amount' => round($totalAmount, 2),
+                'by_entity' => $byEntity,
+            ];
+        });
     }
 }

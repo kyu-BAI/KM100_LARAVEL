@@ -17,7 +17,9 @@ class EmployeeService
     {
         $version = Cache::get('employees:version', 1);
         return Cache::remember("employees:v{$version}:list", 300, function () {
-            return User::where('role', 'employee')
+            return User::query()
+                ->select(['id', 'name', 'email', 'role', 'branch', 'department', 'is_active', 'email_verified_at', 'created_at', 'updated_at'])
+                ->where('role', 'employee')
                 ->orderBy('name', 'asc')
                 ->get();
         });
