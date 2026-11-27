@@ -35,7 +35,7 @@ function getReadableDate(ymd) {
   return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function SalesIncomeCalendarView({
+export default React.memo(function SalesIncomeCalendarView({
   mode, // 'sales' | 'income'
   filteredItems,
   onSaveDailyEntry,
@@ -646,4 +646,4 @@ export default function SalesIncomeCalendarView({
       </View>
     </ScrollView>
   );
-}
+});

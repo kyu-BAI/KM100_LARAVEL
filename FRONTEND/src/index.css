@@ -26,6 +26,10 @@ html {
 button, a, input, [role="button"] {
   touch-action: manipulation;
 }
+button:focus-visible, a:focus-visible, input:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid #f47721;
+  outline-offset: 2px;
+}
 [role="button"], button {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
               filter 0.15s ease, 

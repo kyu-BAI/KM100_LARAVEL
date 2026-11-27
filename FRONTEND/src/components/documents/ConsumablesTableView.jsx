@@ -14,7 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-export default function ConsumablesTableView({
+export default React.memo(function ConsumablesTableView({
   filteredItems = [],
   onViewItem,
   onEditItem,
@@ -405,4 +405,4 @@ export default function ConsumablesTableView({
       </ScrollView>
     </View>
   );
-}
+});

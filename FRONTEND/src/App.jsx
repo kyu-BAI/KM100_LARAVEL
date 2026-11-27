@@ -674,9 +674,6 @@ export default function App() {
   const isFetchingRef = useRef(false);
   const lastSyncAtRef = useRef(0);
 
-  // Lightweight columns for master inventory table to avoid Postgres statement timeout on large base64 image blobs
-  const MASTER_INVENTORY_COLUMNS = 'id, file_name, title, category, category_id, sub_category, sub_category_id, entity, year, month, amount, currency, quantity, unit, status, file_format, file_size, notes, tags, created_at, updated_at, establishment, receipt_date, description';
-
   // Fetch data via Laravel REST API (uses single mirrored master table by default for 92% fewer requests)
   const fetchData = async (silent = false, forceFull = false) => {
     if (isFetchingRef.current) return;
@@ -1587,13 +1584,12 @@ export default function App() {
       // Optimistically update state & persist to system cache immediately
       setItems(prev => {
         const next = [newItemPayload, ...prev.filter(i => i.id !== newItemPayload.id)];
-        saveCachedItems(next);
+        saveCachedItems(next, currentUser);
         return next;
       });
 
       showNotice(`File "${insertedFile.name}" inserted and cataloged!`);
       closeAddModal();
-      fetchData(true);
     } catch (err) {
       console.error(err);
       showNotice('Failed to upload and save document', 'error');
@@ -2053,7 +2049,7 @@ export default function App() {
       await backend.deleteReceipt('inventory_items', id);
       setItems(prev => {
         const next = prev.filter(i => i.id !== id);
-        saveCachedItems(next);
+        saveCachedItems(next, currentUser);
         return next;
       });
       showNotice(`Deleted "${name}"`);
@@ -2095,7 +2091,7 @@ export default function App() {
       // 3. Update local state and cached items
       setItems(prev => {
         const next = prev.map(i => i.id === id ? { ...i, fileName: finalFileName, title: finalTitle } : i);
-        saveCachedItems(next);
+        saveCachedItems(next, currentUser);
         return next;
       });
 
@@ -2135,7 +2131,7 @@ export default function App() {
       // 3. Update local state and cached items
       setItems(prev => {
         const next = prev.map(i => i.id === id ? { ...i, filePath: newPhotoUrl } : i);
-        saveCachedItems(next);
+        saveCachedItems(next, currentUser);
         return next;
       });
 

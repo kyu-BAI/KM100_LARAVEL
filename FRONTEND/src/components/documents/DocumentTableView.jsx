@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import {
   FileSpreadsheet,
@@ -43,7 +43,7 @@ function getItemCategoryGroup(item) {
   return 'Other';
 }
 
-export default function DocumentTableView({
+export default React.memo(function DocumentTableView({
   filteredItems,
   onViewItem,
   onRenameItem,
@@ -57,6 +57,12 @@ export default function DocumentTableView({
   const isAllInventoryView = activeNav?.type === 'all';
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('All');
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeNav?.type, activeNav?.subCategory, filteredItems.length]);
 
   const groupedSections = useMemo(() => {
     if (!isAllInventoryView) return [];
@@ -352,11 +358,44 @@ export default function DocumentTableView({
                 );
               })
             ) : (
-              filteredItems.map((item, idx) => renderRow(item, idx))
+              filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((item, idx) => renderRow(item, (page - 1) * PAGE_SIZE + idx))
             )}
           </View>
         </ScrollView>
       </ScrollView>
+
+      {!isAllInventoryView && filteredItems.length > PAGE_SIZE && (
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderTopWidth: 1,
+          borderTopColor: isLight ? '#e2e8f0' : '#1e293b',
+          backgroundColor: isLight ? '#f8fafc' : '#0f172a'
+        }}>
+          <Text style={{ fontSize: 12, color: isLight ? '#475569' : '#94a3b8' }}>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredItems.length)} of {filteredItems.length}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              disabled={page <= 1}
+              onPress={() => setPage(p => Math.max(1, p - 1))}
+              style={[styles.btnSecondary, page <= 1 && { opacity: 0.45 }]}
+            >
+              <Text style={styles.btnSecondaryText}>Prev</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              disabled={page * PAGE_SIZE >= filteredItems.length}
+              onPress={() => setPage(p => p + 1)}
+              style={[styles.btnSecondary, page * PAGE_SIZE >= filteredItems.length && { opacity: 0.45 }]}
+            >
+              <Text style={styles.btnSecondaryText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
-}
+});

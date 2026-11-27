@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { SHORT_MONTHS as months } from '../../constants/calendar';
 
-export default function SidebarDirectory({
+export default React.memo(function SidebarDirectory({
   sidebarOpen,
   setSidebarOpen,
   isDrawerMode,
@@ -953,4 +953,4 @@ export default function SidebarDirectory({
         )}
     </>
   );
-}
+});

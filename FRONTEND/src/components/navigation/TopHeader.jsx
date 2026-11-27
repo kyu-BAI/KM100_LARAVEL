@@ -13,7 +13,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-export default function TopHeader({
+export default React.memo(function TopHeader({
   sidebarOpen,
   setSidebarOpen,
   searchQuery,
@@ -263,4 +263,4 @@ export default function TopHeader({
       </View>
     </View>
   );
-}
+});
