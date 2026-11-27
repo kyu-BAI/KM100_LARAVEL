@@ -374,11 +374,15 @@ export default function App() {
   const handleAuthSubmit = async () => {
     setAuthError('');
     if (!authEmail.trim() || !authPassword) {
-      setAuthError('Please enter both your admin email and password.');
+      setAuthError(authPortal === 'employee'
+        ? 'Please enter both your employee email and password.'
+        : 'Please enter both your admin email and password.');
       return;
     }
 
-    if (authMode === 'register') {
+    const isAdminRegister = authPortal === 'admin' && authMode === 'register';
+
+    if (isAdminRegister) {
       if (authPassword.length < 6) {
         setAuthError('Password must be at least 6 characters.');
         return;
@@ -391,7 +395,7 @@ export default function App() {
 
     setAuthLoading(true);
     try {
-      if (authMode === 'register') {
+      if (isAdminRegister) {
         const result = await backend.register({
           name: authFullName.trim() || 'System Admin',
           email: authEmail.trim(),
@@ -497,6 +501,7 @@ export default function App() {
 
   const switchAuthPortal = (portal) => {
     setAuthPortal(portal);
+    setAuthMode('login');
     setAuthError('');
     setAuthEmail('');
     setAuthPassword('');
