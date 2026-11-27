@@ -30,9 +30,27 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
 
     const isConsumablesReport = cleanScope.toLowerCase().includes('consumable') || 
                                 cleanScope.toLowerCase().includes('office') || 
-                                folderItems.some(it => it.category === 'Consumables' || it.categoryId === 'consumables');
+                                folderItems.every(it => it.category === 'Consumables' || it.categoryId === 'consumables');
 
-    const reportTitle = cleanScope.toUpperCase() + (isConsumablesReport ? ' - CONSUMABLES INVENTORY REGISTER' : ' - AUDIT REPORT');
+    const isSalesReport = !isConsumablesReport && (
+      cleanScope.toLowerCase().includes('sales') ||
+      folderItems.every(it => (it.category || '').toLowerCase() === 'sales')
+    );
+    const isIncomeReport = !isConsumablesReport && (
+      cleanScope.toLowerCase().includes('income') ||
+      folderItems.every(it => (it.category || '').toLowerCase() === 'income')
+    );
+    const isDailySalesOrIncome = isSalesReport || isIncomeReport;
+
+    const reportTitle = cleanScope.toUpperCase() + (
+      isConsumablesReport
+        ? ' - CONSUMABLES INVENTORY REGISTER'
+        : isSalesReport
+          ? ' - DAILY SALES REPORT'
+          : isIncomeReport
+            ? ' - DAILY INCOME REPORT'
+            : ' - AUDIT REPORT'
+    );
 
     // Calculate total sum
     const totalAmount = folderItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
@@ -41,7 +59,13 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
     // 1. Prepare clean array of arrays (AOA)
     const headerCols = isConsumablesReport
       ? ['Item No.', 'Date', 'Particulars', 'Supplier', 'OR / SI No.', 'Qty', 'Unit Measure', 'Unit Cost (PHP)', 'Amount (PHP)', 'Branch', 'Status']
-      : ['No.', 'Document Title', 'Establishment / Store', 'Invoice / OR No.', 'Branch', 'Receipt Date', 'Date Recorded', 'Amount (PHP)', 'Status'];
+      : isDailySalesOrIncome
+        ? ['No.', 'Date', 'Establishment', 'Remarks / Notes', isSalesReport ? 'Daily Sales (PHP)' : 'Daily Income (PHP)', 'Status']
+        : ['No.', 'Document Title', 'Establishment / Store', 'Invoice / OR No.', 'Branch', 'Receipt Date', 'Date Recorded', 'Amount (PHP)', 'Status'];
+
+    const summaryLabel = isDailySalesOrIncome
+      ? `EXPORT DATE: ${dateStr} • ${timeStr}     |     TOTAL DAYS: ${folderItems.length}     |     TOTAL ${isSalesReport ? 'SALES' : 'INCOME'}: ${totalFormatted}     |     STATUS: RECORDED`
+      : `EXPORT DATE: ${dateStr} • ${timeStr}     |     TOTAL RECORDS: ${folderItems.length}     |     TOTAL AMOUNT: ${totalFormatted}     |     STATUS: VERIFIED INVENTORY`;
 
     const aoa = [
       // Row 0: Company Header Banner
@@ -49,15 +73,19 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
       // Row 1: Report Title Banner
       [reportTitle],
       // Row 2: Metadata Summary Bar
-      [`EXPORT DATE: ${dateStr} • ${timeStr}     |     TOTAL RECORDS: ${folderItems.length}     |     TOTAL AMOUNT: ${totalFormatted}     |     STATUS: VERIFIED INVENTORY`],
+      [summaryLabel],
       // Row 3: Spacer Row
       [],
       // Row 4: Clean, Essential Table Column Headers
       headerCols
     ];
 
+    const exportItems = isDailySalesOrIncome
+      ? [...folderItems].sort((a, b) => (b.receiptDate || b.scannedDate || '').localeCompare(a.receiptDate || a.scannedDate || ''))
+      : folderItems;
+
     // 2. Map and clean each item row
-    folderItems.forEach((item, index) => {
+    exportItems.forEach((item, index) => {
       const num = index + 1;
       const preview = item.previewData || {};
 
@@ -87,6 +115,21 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
           branch,
           status
         ]);
+      } else if (isDailySalesOrIncome) {
+        const entryDate = item.receiptDate || item.scannedDate || item.createdAt || '-';
+        const establishment = item.entity || item.establishment || '-';
+        const remarks = item.notes || item.description || item.title || '-';
+        const amount = parseFloat(item.amount) || 0;
+        const status = item.status || 'Recorded';
+
+        aoa.push([
+          num,
+          entryDate,
+          establishment,
+          remarks,
+          amount,
+          status
+        ]);
       } else {
         const docTitle = item.title || item.fileName || '-';
         const store = item.establishment || item.store || '-';
@@ -112,21 +155,18 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
     });
 
     const dataStartRow = 5; // Row index 5 is first item
-    const dataEndRow = dataStartRow + folderItems.length - 1;
+    const dataEndRow = dataStartRow + exportItems.length - 1;
+    const colCount = headerCols.length;
+    const amountColIdx = isConsumablesReport ? 8 : isDailySalesOrIncome ? 4 : 7;
+    const statusColIdx = colCount - 1;
 
     // 3. Summary Footer Rows
     aoa.push([]); // Spacer row
-    aoa.push([
-      'TOTAL AMOUNT (PHP):', // Merged col 0-6
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      totalAmount,          // Col 7: Total Sum
-      'KM100 VERIFIED'      // Col 8: Verified badge
-    ]);
+    const totalRow = new Array(colCount).fill('');
+    totalRow[0] = isSalesReport ? 'TOTAL SALES (PHP):' : isIncomeReport ? 'TOTAL INCOME (PHP):' : 'TOTAL AMOUNT (PHP):';
+    totalRow[amountColIdx] = totalAmount;
+    totalRow[statusColIdx] = 'KM100 VERIFIED';
+    aoa.push(totalRow);
     aoa.push([
       'KM100 • OFFICIAL AUDIT COPY'
     ]);
@@ -135,28 +175,51 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
     const ws = XLSX.utils.aoa_to_sheet(aoa);
 
     // 5. Optimized Column Widths (breathing room for all data)
-    ws['!cols'] = [
-      { wch: 6 },  // 0: No.
-      { wch: 28 }, // 1: Document Title
-      { wch: 32 }, // 2: Establishment / Store
-      { wch: 20 }, // 3: Invoice / OR No.
-      { wch: 18 }, // 4: Branch
-      { wch: 15 }, // 5: Receipt Date
-      { wch: 16 }, // 6: Date Recorded
-      { wch: 20 }, // 7: Amount (PHP)
-      { wch: 15 }  // 8: Status
-    ];
+    ws['!cols'] = isConsumablesReport
+      ? [
+          { wch: 10 }, // Item No.
+          { wch: 14 }, // Date
+          { wch: 30 }, // Particulars
+          { wch: 24 }, // Supplier
+          { wch: 16 }, // OR / SI No.
+          { wch: 8 },  // Qty
+          { wch: 14 }, // Unit Measure
+          { wch: 16 }, // Unit Cost
+          { wch: 18 }, // Amount
+          { wch: 16 }, // Branch
+          { wch: 14 }  // Status
+        ]
+      : isDailySalesOrIncome
+        ? [
+            { wch: 7 },  // No.
+            { wch: 16 }, // Date
+            { wch: 20 }, // Establishment
+            { wch: 42 }, // Remarks / Notes
+            { wch: 22 }, // Daily Sales / Income (PHP)
+            { wch: 16 }  // Status
+          ]
+        : [
+            { wch: 6 },  // 0: No.
+            { wch: 28 }, // 1: Document Title
+            { wch: 32 }, // 2: Establishment / Store
+            { wch: 20 }, // 3: Invoice / OR No.
+            { wch: 18 }, // 4: Branch
+            { wch: 15 }, // 5: Receipt Date
+            { wch: 16 }, // 6: Date Recorded
+            { wch: 20 }, // 7: Amount (PHP)
+            { wch: 15 }  // 8: Status
+          ];
 
     // 6. Merged Regions
     const totalRowIdx = dataEndRow + 2;
     const footerRowIdx = totalRowIdx + 1;
 
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Title across 9 columns
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, // Subtitle banner across 9 columns
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }, // Metadata bar across 9 columns
-      { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: 6 } }, // Total label merged A-G
-      { s: { r: footerRowIdx, c: 0 }, e: { r: footerRowIdx, c: 8 } } // System watermark merged A-I
+      { s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: colCount - 1 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: colCount - 1 } },
+      { s: { r: totalRowIdx, c: 0 }, e: { r: totalRowIdx, c: amountColIdx - 1 } },
+      { s: { r: footerRowIdx, c: 0 }, e: { r: footerRowIdx, c: colCount - 1 } }
     ];
 
     // Row heights for executive spacing
@@ -231,15 +294,21 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
     }
 
     // Style Row 4: Column Headers
-    for (let c = 0; c < 9; c++) {
+    for (let c = 0; c < colCount; c++) {
       const cell = ws[encodeCell(4, c)];
       if (cell) {
+        const isCenter = isDailySalesOrIncome
+          ? (c === 0 || c === 1 || c === 2 || c === statusColIdx)
+          : isConsumablesReport
+            ? (c === 0 || c === 1 || c === 4 || c === 5 || c === 6 || c === 9 || c === statusColIdx)
+            : (c === 0 || c === 3 || c === 4 || c === 5 || c === 6 || c === statusColIdx);
+        const isRight = c === amountColIdx || (isConsumablesReport && c === 7);
         cell.s = {
           font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
           fill: headerFill,
           border: headerBorder,
           alignment: {
-            horizontal: c === 0 || c === 3 || c === 4 || c === 5 || c === 6 || c === 8 ? 'center' : c === 7 ? 'right' : 'left',
+            horizontal: isCenter ? 'center' : isRight ? 'right' : 'left',
             vertical: 'center'
           }
         };
@@ -249,7 +318,7 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
     // Style Data Rows
     for (let r = dataStartRow; r <= dataEndRow; r++) {
       const isAlt = (r - dataStartRow) % 2 === 1;
-      for (let c = 0; c < 9; c++) {
+      for (let c = 0; c < colCount; c++) {
         const cell = ws[encodeCell(r, c)];
         if (cell) {
           const s = {
@@ -259,19 +328,26 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
           };
 
           if (isAlt) s.fill = altRowFill;
-          if (c === 0 || c === 3 || c === 4 || c === 5 || c === 6) {
+          const isCenterCol = isDailySalesOrIncome
+            ? (c === 0 || c === 1 || c === 2)
+            : isConsumablesReport
+              ? (c === 0 || c === 1 || c === 4 || c === 5 || c === 6 || c === 9)
+              : (c === 0 || c === 3 || c === 4 || c === 5 || c === 6);
+
+          if (isCenterCol) {
             s.alignment.horizontal = 'center';
-          } else if (c === 7) {
+            if (isDailySalesOrIncome && c === 1) s.font.bold = true;
+          } else if (c === amountColIdx || (isConsumablesReport && c === 7)) {
             s.alignment.horizontal = 'right';
             s.font.bold = true;
             s.numFmt = '₱#,##0.00;[Red](₱#,##0.00);"-"';
-          } else if (c === 8) {
+          } else if (c === statusColIdx) {
             s.alignment.horizontal = 'center';
             s.font.bold = true;
             s.font.color = { rgb: '059669' };
           } else {
             s.alignment.horizontal = 'left';
-            if (c === 1) s.font.bold = true;
+            if (!isDailySalesOrIncome && c === 1) s.font.bold = true;
           }
 
           cell.s = s;
@@ -280,7 +356,7 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
     }
 
     // Style Summary Row (Total Amount)
-    for (let c = 0; c < 9; c++) {
+    for (let c = 0; c < colCount; c++) {
       const cell = ws[encodeCell(totalRowIdx, c)];
       if (cell) {
         cell.s = {
@@ -288,15 +364,15 @@ export function exportRecordsToExcel({ folderLabel = 'Inventory Records', folder
           fill: summaryFill,
           border: doubleBottomBorder,
           alignment: {
-            horizontal: c === 7 ? 'right' : c === 8 ? 'center' : 'right',
+            horizontal: c === amountColIdx ? 'right' : c === statusColIdx ? 'center' : 'right',
             vertical: 'center'
           }
         };
-        if (c === 7) {
+        if (c === amountColIdx) {
           cell.s.numFmt = '₱#,##0.00;[Red](₱#,##0.00);"-"';
           cell.s.font.sz = 11.5;
         }
-        if (c === 8) {
+        if (c === statusColIdx) {
           cell.s.font.color = { rgb: '059669' };
         }
       }
